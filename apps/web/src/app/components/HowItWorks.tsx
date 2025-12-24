@@ -1,9 +1,8 @@
 import { Plane, CreditCard, ShoppingBag, Calendar, RotateCcw } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-const travelOrganizerScreenshot = "https://placehold.co/600x400?text=Travel+App";
-const expenseTrackingScreenshot = "https://placehold.co/600x400?text=Expense+Tracking";
-const assistantsScreenshot = "https://placehold.co/600x400?text=Assistants";
-
+import travelOrganizerScreenshot from "@/assets/2121b57700922c934b7fca684f22bd173fb5412e.png";
+import expenseTrackingScreenshot from "@/assets/3c5bf939bd58bf0edb8c9690226df392e3923399.png";
+import assistantsScreenshot from "@/assets/2f8cebd62069fe0b22e2d1a12f90a8c37a050520.png";
 
 const features = [
   {

@@ -1,6 +1,7 @@
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-const travelOrganizerScreenshot = "https://placehold.co/600x400?text=Travel";
-const expenseTrackingScreenshot = "https://placehold.co/600x400?text=Expenses";
+import React from 'react';
+// Using the @ alias for cleaner paths and adding extensions
+import travelOrganizerScreenshot from "@/assets/2121b57700922c934b7fca684f22bd173fb5412e.png";
+import expenseTrackingScreenshot from '@/assets/3c5bf939bd58bf0edb8c9690226df392e3923399.png';
 
 export function AssistantShowcase() {
   return (
@@ -122,7 +123,7 @@ export function AssistantShowcase() {
                   </div>
                   <div>
                     <span className="font-bold text-gray-900">Para tasarrufu ipuçları</span>
-                    <span className="text-gray-600"> harcama alışkanlıklarınıza göre</span>
+                    <span className="text-gray-600"> harcama alışkanlıklarınıya göre</span>
                   </div>
                 </li>
               </ul>

@@ -13,12 +13,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Tüm endpointleri dışarı aç
+        registry.addMapping("/api/**")
                 .allowedOrigins(
-                        "http://localhost:3000",      // Yeni Landing Page (Web)
-                        "http://localhost:3001",      // Yeni Dashboard (App)
-                        "http://localhost:8080",      // Backend'in kendisi (Test için)
-                        frontendUrl                   // Config dosyasından gelen (Yedek)
+                        "http://localhost:3000",
+                        "http://localhost:3001",
+                        "http://localhost:8080",
+                        "https://okanacer.xyz" // Added your production domain
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")

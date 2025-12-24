@@ -1,5 +1,5 @@
 import { Monitor, Download, Shield, Zap, Mail, TrendingUp } from "lucide-react";
-const assistantsScreenshot = "https://placehold.co/800x500?text=Desktop+App+Preview";
+import assistantsScreenshot from "@/assets/2f8cebd62069fe0b22e2d1a12f90a8c37a050520.png";
 
 export function DesktopFeatures() {
   return (
