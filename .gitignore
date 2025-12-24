@@ -23,6 +23,7 @@ target/
 # Java log dosyaları
 *.log
 
+
 # --- Environment Variables (Secrets) ---
 .env
 .env.local
