@@ -1,17 +1,26 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import * as path from 'path'; // Use * as path to avoid the default import error
+import { defineConfig } from 'vite'
+import path from 'path'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
+  // --- BURAYI GÜNCELLİYORUZ ---
   server: {
     port: 3000,
-    allowedHosts: ['okanacer.xyz', '.okanacer.xyz'],
-    host: true,
+    host: true, // 0.0.0.0 üzerinden dinlemesi için (Cloudflare tüneli için gerekli)
+    allowedHosts: [
+      'okanacer.xyz',
+      'www.okanacer.xyz',
+      'all' // Test için tüm hostlara izin ver (veya sadece domainini yaz)
+    ]
   }
-});
+})

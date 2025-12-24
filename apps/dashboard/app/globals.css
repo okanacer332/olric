@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* UI Paketindeki ve src klasöründeki dosyaları taraması için kaynak ekliyoruz */
+@source "../src";
+@source "../../../packages/ui"; 
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
