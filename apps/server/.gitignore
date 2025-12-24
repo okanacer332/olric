@@ -38,5 +38,5 @@ yarn-error.log*
 *.pem
 
 src/main/resources/application.properties
-
+apps/server/target/classes/application.properties
 target
