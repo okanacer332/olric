@@ -36,4 +36,7 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
- 
+
+src/main/resources/application.properties
+
+target
