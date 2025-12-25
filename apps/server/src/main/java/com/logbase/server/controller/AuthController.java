@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -16,33 +19,40 @@ public class AuthController {
 
     private final AuthService authService;
 
+    // Google OAuth Config
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
 
-    // YENİ: Dashboard URL'ini çekiyoruz
+    // Microsoft OAuth Config
+    @Value("${microsoft.client.id:}")
+    private String microsoftClientId;
+    
+    @Value("${microsoft.tenant:common}")
+    private String microsoftTenant;
+
+    // Dashboard URL for redirects
     @Value("${app.dashboard.url}")
     private String dashboardUrl;
 
     /**
-     * Dynamically builds the Google OAuth callback URI based on the incoming request.
-     * - Production (api.okanacer.xyz) → https://api.okanacer.xyz/api/auth/callback/google
-     * - Development (localhost) → http://localhost:8080/api/auth/callback/google
+     * Dynamically builds OAuth callback URI based on request origin.
      */
-    private String buildCallbackUri(HttpServletRequest request) {
+    private String buildCallbackUri(HttpServletRequest request, String provider) {
         String serverName = request.getServerName();
+        String path = "/api/auth/callback/" + provider;
         
         // Production domain detection
         if (serverName.equals("api.okanacer.xyz") || serverName.endsWith(".okanacer.xyz")) {
-            return "https://api.okanacer.xyz/api/auth/callback/google";
+            return "https://api.okanacer.xyz" + path;
         }
         
         // Development fallback
         int serverPort = request.getServerPort();
         String scheme = request.getScheme();
         if (serverPort == 80 || serverPort == 443) {
-            return scheme + "://" + serverName + "/api/auth/callback/google";
+            return scheme + "://" + serverName + path;
         }
-        return scheme + "://" + serverName + ":" + serverPort + "/api/auth/callback/google";
+        return scheme + "://" + serverName + ":" + serverPort + path;
     }
 
     @GetMapping("/login/{provider}")
@@ -52,26 +62,39 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
+        String stateParam = (redirectUrl != null && !redirectUrl.isEmpty()) ? redirectUrl : dashboardUrl;
+        String encodedState = URLEncoder.encode(stateParam, StandardCharsets.UTF_8);
+        String callbackUri = buildCallbackUri(request, provider.toLowerCase());
+
         if ("google".equalsIgnoreCase(provider)) {
-            // Use provided redirectUrl or fall back to configured dashboardUrl
-            String stateParam = (redirectUrl != null && !redirectUrl.isEmpty()) ? redirectUrl : dashboardUrl;
-            
-            // URL encode the state parameter to handle special characters
-            String encodedState = java.net.URLEncoder.encode(stateParam, java.nio.charset.StandardCharsets.UTF_8);
-            
-            // Dynamically build callback URI based on request origin
-            String callbackUri = buildCallbackUri(request);
-            
+            // Google OAuth 2.0
             String url = "https://accounts.google.com/o/oauth2/v2/auth" +
                     "?client_id=" + googleClientId +
-                    "&redirect_uri=" + java.net.URLEncoder.encode(callbackUri, java.nio.charset.StandardCharsets.UTF_8) +
+                    "&redirect_uri=" + URLEncoder.encode(callbackUri, StandardCharsets.UTF_8) +
                     "&response_type=code" +
                     "&scope=email profile https://www.googleapis.com/auth/gmail.readonly" +
                     "&access_type=offline" +
                     "&prompt=consent" +
                     "&state=" + encodedState;
-
             response.sendRedirect(url);
+            
+        } else if ("microsoft".equalsIgnoreCase(provider)) {
+            // Microsoft OAuth 2.0 (Azure AD)
+            if (microsoftClientId == null || microsoftClientId.isEmpty()) {
+                response.sendRedirect(dashboardUrl + "/dashboard?error=microsoft_not_configured");
+                return;
+            }
+            
+            String url = "https://login.microsoftonline.com/" + microsoftTenant + "/oauth2/v2.0/authorize" +
+                    "?client_id=" + microsoftClientId +
+                    "&redirect_uri=" + URLEncoder.encode(callbackUri, StandardCharsets.UTF_8) +
+                    "&response_type=code" +
+                    "&scope=openid profile email offline_access https://graph.microsoft.com/Mail.Read" +
+                    "&state=" + encodedState;
+            response.sendRedirect(url);
+            
+        } else {
+            response.sendRedirect(dashboardUrl + "/dashboard?error=unknown_provider");
         }
     }
 
@@ -84,30 +107,35 @@ public class AuthController {
             HttpServletResponse response
     ) throws IOException {
         try {
-            // Build the same callback URI that was used in the initial OAuth request
-            String callbackUri = buildCallbackUri(request);
+            String callbackUri = buildCallbackUri(request, provider.toLowerCase());
             String token = authService.processLogin(provider, code, callbackUri);
 
-            // Use the state parameter to determine redirect URL if provided
-            // Otherwise fall back to configured dashboard URL
-            String redirectUrl;
-            if (state != null && !state.isEmpty()) {
-                // URL decode the state parameter
-                redirectUrl = java.net.URLDecoder.decode(state, java.nio.charset.StandardCharsets.UTF_8);
-            } else {
-                redirectUrl = dashboardUrl;
-            }
+            // Decode state to get redirect URL
+            String redirectUrl = (state != null && !state.isEmpty()) 
+                ? URLDecoder.decode(state, StandardCharsets.UTF_8) 
+                : dashboardUrl;
 
-            // Always redirect to /dashboard path with auth params
+            // Redirect to dashboard with auth token
             response.sendRedirect(redirectUrl + "/dashboard?success=true&user=" + token);
 
         } catch (Exception e) {
             e.printStackTrace();
-            // On error, redirect to dashboard with error parameter
             String redirectUrl = (state != null && !state.isEmpty()) 
-                ? java.net.URLDecoder.decode(state, java.nio.charset.StandardCharsets.UTF_8) 
+                ? URLDecoder.decode(state, StandardCharsets.UTF_8) 
                 : dashboardUrl;
-            response.sendRedirect(redirectUrl + "/dashboard?error=auth_failed");
+            response.sendRedirect(redirectUrl + "/dashboard?error=auth_failed&provider=" + provider);
         }
+    }
+    
+    /**
+     * Gets connected providers for current user.
+     */
+    @GetMapping("/connections")
+    public java.util.Map<String, Object> getConnections(@RequestParam String userId) {
+        // TODO: Implement proper connection listing
+        return java.util.Map.of(
+            "userId", userId,
+            "providers", java.util.List.of("GOOGLE") // Placeholder
+        );
     }
 }

@@ -11,6 +11,16 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from "../../hooks/useAuth";
 import { PremiumModal } from "../../components/PremiumModal";
 
+// Get API base URL dynamically
+const getApiUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'http://localhost:8080';
+    }
+    return 'https://api.okanacer.xyz';
+};
+
 export default function ConnectionsPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
@@ -21,6 +31,10 @@ export default function ConnectionsPage() {
 
     // For now, user is always FREE plan (will come from JWT in future)
     const isFreePlan = true;
+
+    // Free tier: 1 Gmail + 1 Outlook allowed
+    const hasGmailConnected = true; // TODO: Get from user data
+    const hasOutlookConnected = false; // TODO: Get from user data
 
     if (isLoading) {
         return (
@@ -38,36 +52,19 @@ export default function ConnectionsPage() {
     const userName = user.email.split("@")[0];
     const userInitial = userName.charAt(0).toUpperCase();
 
-    // Mock connected accounts data (will come from API in future)
-    const loginAccount = {
-        email: user.email,
-        provider: "Google",
-        connectedAt: "December 2025"
+    const handleConnectOutlook = () => {
+        const redirectUrl = encodeURIComponent(window.location.origin);
+        window.location.href = `${getApiUrl()}/api/auth/login/microsoft?redirectUrl=${redirectUrl}`;
     };
 
-    // For demo, synced account is same as login (can be different in premium)
-    const syncedAccounts = [
-        {
-            id: "1",
-            email: user.email,
-            provider: "Gmail",
-            lastSync: "2 minutes ago",
-            status: "active"
-        }
-    ];
-
-    const handleAddAccount = () => {
-        if (isFreePlan) {
-            setShowPremiumModal(true);
-        } else {
-            // TODO: Trigger OAuth flow for additional account
-            console.log("Add account flow");
-        }
+    const handleConnectGmail = () => {
+        const redirectUrl = encodeURIComponent(window.location.origin);
+        window.location.href = `${getApiUrl()}/api/auth/login/google?redirectUrl=${redirectUrl}`;
     };
 
-    const handleRevokeAccess = (accountId: string) => {
+    const handleRevokeAccess = (provider: string) => {
         // TODO: API call to revoke access
-        console.log("Revoke access for:", accountId);
+        console.log("Revoke access for:", provider);
         setShowRevokeConfirm(null);
     };
 
@@ -101,169 +98,155 @@ export default function ConnectionsPage() {
                         <p className="text-gray-500 text-sm sm:text-base mt-1">
                             {t('connections.subtitle')}
                         </p>
+                        {isFreePlan && (
+                            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-full text-sm font-medium">
+                                <Crown size={14} className="text-purple-500" />
+                                Free Plan: 1 Gmail + 1 Outlook
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-6">
 
-                        {/* Login Account Section */}
+                        {/* Gmail Connection */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-                            <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Mail className="text-blue-600" size={20} />
-                                {t('connections.loginAccount')}
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-6">
-                                {t('connections.loginAccountDesc')}
-                            </p>
-
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-xl gap-3 bg-gray-50">
+                            <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
-                                        {userInitial}
+                                    <div className="p-2 bg-red-50 rounded-xl">
+                                        <img
+                                            src="https://www.google.com/gmail/about/static-2.0/images/logo-gmail.png"
+                                            alt="Gmail"
+                                            className="w-8 h-8"
+                                        />
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-gray-900">{loginAccount.email}</p>
-                                        <p className="text-xs text-gray-500">
-                                            {t('connections.connectedVia', { provider: loginAccount.provider })}
-                                        </p>
+                                        <h3 className="text-lg font-bold text-gray-900">Gmail</h3>
+                                        <p className="text-sm text-gray-500">Google Email Account</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                {hasGmailConnected ? (
                                     <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1.5 rounded-full flex items-center gap-1">
                                         <CheckCircle2 size={12} />
-                                        Active
+                                        Connected
                                     </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Synced Email Accounts Section */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                    <RefreshCw className="text-green-600" size={20} />
-                                    {t('connections.syncedEmails')}
-                                </h3>
-                                {isFreePlan && (
-                                    <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full flex items-center gap-1">
-                                        <Crown size={10} />
-                                        1 Account
-                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={handleConnectGmail}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Plus size={16} />
+                                        Connect
+                                    </button>
                                 )}
                             </div>
-                            <p className="text-sm text-gray-500 mb-6">
-                                {t('connections.syncedEmailsDesc')}
-                            </p>
 
-                            {syncedAccounts.length > 0 ? (
-                                <div className="space-y-3">
-                                    {syncedAccounts.map((account) => (
-                                        <div
-                                            key={account.id}
-                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-xl gap-3"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-red-50 rounded-lg">
-                                                    <img
-                                                        src="https://www.google.com/gmail/about/static-2.0/images/logo-gmail.png"
-                                                        alt="Gmail"
-                                                        className="w-6 h-6"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-gray-900">{account.email}</p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {t('connections.lastSync', { time: account.lastSync })}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                                    Syncing
-                                                </span>
-                                                {showRevokeConfirm === account.id ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => handleRevokeAccess(account.id)}
-                                                            className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors"
-                                                        >
-                                                            Confirm
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setShowRevokeConfirm(null)}
-                                                            className="text-xs font-medium text-gray-600 hover:text-gray-800"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => setShowRevokeConfirm(account.id)}
-                                                        className="text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors flex items-center gap-1"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                        {t('connections.revoke')}
-                                                    </button>
-                                                )}
-                                            </div>
+                            {hasGmailConnected && (
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-xl gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 text-white flex items-center justify-center font-bold">
+                                            {userInitial}
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <AlertCircle className="mx-auto mb-2 text-gray-400" size={32} />
-                                    <p className="font-medium">{t('connections.noSyncedAccounts')}</p>
-                                    <p className="text-sm">{t('connections.startSync')}</p>
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{user.email}</p>
+                                            <p className="text-xs text-gray-500">
+                                                <RefreshCw size={10} className="inline mr-1" />
+                                                Last synced: 2 minutes ago
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {showRevokeConfirm === 'gmail' ? (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleRevokeAccess('gmail')}
+                                                className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors"
+                                            >
+                                                Confirm
+                                            </button>
+                                            <button
+                                                onClick={() => setShowRevokeConfirm(null)}
+                                                className="text-xs font-medium text-gray-600 hover:text-gray-800"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setShowRevokeConfirm('gmail')}
+                                            className="text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                                        >
+                                            <Trash2 size={12} />
+                                            Disconnect
+                                        </button>
+                                    )}
                                 </div>
                             )}
-
-                            {/* Add Account Button */}
-                            <div className="mt-6 pt-6 border-t border-gray-100">
-                                <button
-                                    onClick={handleAddAccount}
-                                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors ${isFreePlan
-                                            ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:opacity-90'
-                                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                                        }`}
-                                >
-                                    {isFreePlan ? (
-                                        <>
-                                            <Crown size={18} />
-                                            {t('connections.addAccountPremium')}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus size={18} />
-                                            {t('connections.addAccount')}
-                                        </>
-                                    )}
-                                </button>
-                            </div>
                         </div>
 
-                        {/* Plan Info for Free Users */}
-                        {isFreePlan && (
-                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-100">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 bg-white rounded-xl shadow-sm">
-                                        <Crown className="text-purple-600" size={24} />
+                        {/* Outlook Connection */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-50 rounded-xl">
+                                        <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none">
+                                            <rect width="32" height="32" rx="2" fill="#0078D4" />
+                                            <path d="M7 8h8v16H7V8z" fill="#0A2767" />
+                                            <ellipse cx="11" cy="16" rx="5" ry="6" fill="#28A8EA" />
+                                            <path d="M17 10h8v12h-8V10z" fill="#50D9FF" />
+                                            <path d="M17 14l8-4v12l-8 4V14z" fill="#0078D4" />
+                                        </svg>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-gray-900 mb-1">
-                                            {t('premium.title')}
-                                        </h4>
-                                        <p className="text-sm text-gray-600 mb-3">
-                                            {t('connections.addAccountPremium')}
-                                        </p>
-                                        <button
-                                            onClick={() => setShowPremiumModal(true)}
-                                            className="text-sm font-semibold text-purple-600 hover:text-purple-700"
-                                        >
-                                            {t('premium.upgradeButton')} →
-                                        </button>
+                                        <h3 className="text-lg font-bold text-gray-900">Outlook</h3>
+                                        <p className="text-sm text-gray-500">Microsoft Email Account</p>
                                     </div>
                                 </div>
+                                {hasOutlookConnected ? (
+                                    <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1.5 rounded-full flex items-center gap-1">
+                                        <CheckCircle2 size={12} />
+                                        Connected
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={handleConnectOutlook}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Plus size={16} />
+                                        Connect
+                                    </button>
+                                )}
                             </div>
-                        )}
+
+                            {!hasOutlookConnected && (
+                                <div className="p-4 bg-blue-50 rounded-xl text-center">
+                                    <p className="text-sm text-blue-700">
+                                        Connect your Outlook account to sync Microsoft emails
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Premium Upsell for Additional Accounts */}
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-100">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-white rounded-xl shadow-sm">
+                                    <Crown className="text-purple-600" size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-900 mb-1">
+                                        Need more accounts?
+                                    </h4>
+                                    <p className="text-sm text-gray-600 mb-3">
+                                        Upgrade to Premium for unlimited Gmail and Outlook accounts
+                                    </p>
+                                    <button
+                                        onClick={() => setShowPremiumModal(true)}
+                                        className="text-sm font-semibold text-purple-600 hover:text-purple-700"
+                                    >
+                                        {t('premium.upgradeButton')} →
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </motion.div>
