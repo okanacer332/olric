@@ -44,6 +44,11 @@ public class User {
     @Builder.Default
     private String role = "USER";
 
+    // Kullanıcının abonelik planı (FREE, PREMIUM)
+    // Varsayılan olarak "FREE" atanmalı.
+    @Builder.Default
+    private String plan = "FREE";
+
     // --- Embedded İlişki ---
     // Kullanıcının bağladığı tüm dış hesaplar burada liste olarak tutulur.
     // "Single Responsibility": User sınıfı kimliği, bu liste ise veri kaynaklarını yönetir.

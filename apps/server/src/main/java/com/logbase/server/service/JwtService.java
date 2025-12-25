@@ -29,6 +29,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", user.getEmail());
         claims.put("role", user.getRole());
+        claims.put("plan", user.getPlan()); // Include subscription plan in token
 
         return createToken(claims, user.getId());
     }

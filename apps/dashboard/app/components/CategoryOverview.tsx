@@ -3,22 +3,30 @@
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { DashboardStats, Category } from '../lib/types';
+import { DashboardStats, Category, isPremiumCategory } from '../lib/types';
 import { getCategoryTheme } from '../lib/categoryTheme';
 import { CategoryCard } from './CategoryCard';
 
 interface CategoryOverviewProps {
     stats: DashboardStats | null;
+    isFreePlan?: boolean;
+    onPremiumClick?: () => void;
 }
 
 /**
  * Grid of category cards showing summary of each category.
+ * Premium categories show lock state for free users and trigger modal on click.
  */
-export function CategoryOverview({ stats }: CategoryOverviewProps) {
+export function CategoryOverview({ stats, isFreePlan = true, onPremiumClick }: CategoryOverviewProps) {
     const router = useRouter();
     const t = useTranslations();
 
     const handleCategoryClick = (category: Category) => {
+        // If user is on free plan and clicking a premium category, show modal
+        if (isFreePlan && isPremiumCategory(category)) {
+            onPremiumClick?.();
+            return;
+        }
         router.push(`/?category=${category}`);
     };
 
@@ -61,8 +69,10 @@ export function CategoryOverview({ stats }: CategoryOverviewProps) {
                     value={value}
                     subtitle={subtitle}
                     onClick={() => handleCategoryClick(category)}
+                    isLocked={isFreePlan && isPremiumCategory(category)}
                 />
             ))}
         </motion.div>
     );
 }
+

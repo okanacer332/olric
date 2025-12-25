@@ -118,7 +118,11 @@ function DashboardContent() {
       {selectedCategory ? (
         <CategoryDetailView category={selectedCategory} items={items} />
       ) : (
-        <CategoryOverview stats={stats} />
+        <CategoryOverview
+          stats={stats}
+          isFreePlan={true} // TODO: Get from user session/JWT when backend provides it
+          onPremiumClick={() => setShowPremiumModal(true)}
+        />
       )}
 
       {/* Sync progress bar */}

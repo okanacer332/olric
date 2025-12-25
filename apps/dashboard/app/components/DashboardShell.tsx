@@ -8,13 +8,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard, User, Menu, X, LogOut, Plane, PanelLeftClose, PanelLeftOpen,
-  Bell, Wallet, ShoppingBag, Calendar, CreditCard, Layers, ChevronRight, Globe, Loader2, RefreshCw
+  Bell, Wallet, ShoppingBag, Calendar, CreditCard, Layers, ChevronRight, Globe, Loader2, RefreshCw, Lock, Crown, Link2
 } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { PremiumModal } from "./PremiumModal";
+import { isPremiumCategory, Category } from "../lib/types";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -24,6 +27,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const userParam = searchParams.get("user");
   const currentCategory = searchParams.get("category");
   const ICON_SIZE = 18;
+
+  // Get user plan from session (defaults to FREE for free users)
+  // The plan comes from the JWT token which includes the plan field
+  const userPlan = (session as any)?.user?.plan || 'FREE';
+  const isFreePlan = userPlan === 'FREE';
 
   // i18n translations
   const t = useTranslations();
@@ -61,6 +69,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const mainMenuItems = [
     { name: t('menu.overview'), href: "/", icon: <LayoutDashboard size={ICON_SIZE} />, exact: true },
     { name: t('menu.profile'), href: "/dashboard/profile", icon: <User size={ICON_SIZE} />, exact: false },
+    { name: t('menu.connections'), href: "/dashboard/connections", icon: <Link2 size={ICON_SIZE} />, exact: false },
   ];
 
   const categoryMenuItems = [
@@ -106,6 +115,84 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     </Link>
   );
 
+  // Render category menu link with premium lock handling
+  const renderCategoryLink = (item: any) => {
+    const categoryId = item.id as Category;
+    const isLocked = isFreePlan && isPremiumCategory(categoryId);
+
+    if (isLocked) {
+      // Premium category for free user - show locked state
+      return (
+        <div
+          key={item.name}
+          onClick={() => {
+            setIsMobileMenuOpen(false);
+            setIsPremiumModalOpen(true);
+          }}
+          className={`
+            flex items-center py-2 px-2.5 rounded-lg transition-all group relative cursor-pointer mb-0.5
+            text-gray-400 hover:bg-purple-50 hover:text-purple-600 border border-transparent
+            ${isCollapsed ? "justify-center" : ""}
+          `}
+          title={isCollapsed ? `${item.name} - ${t('menu.getPremium')}` : ""}
+        >
+          {/* Lock icon instead of category icon */}
+          <div className="min-w-[20px] flex justify-center items-center transition-colors text-purple-400 group-hover:text-purple-500">
+            <Lock size={ICON_SIZE} />
+          </div>
+
+          <div className={`overflow-hidden transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 ml-0" : "w-auto opacity-100 ml-3"}`}>
+            <div className="flex flex-col">
+              <span className="whitespace-nowrap text-sm font-medium text-gray-500 group-hover:text-purple-600">{item.name}</span>
+              <span className="whitespace-nowrap text-[10px] font-semibold text-purple-500 flex items-center gap-1">
+                <Crown size={10} />
+                {t('menu.getPremium')}
+              </span>
+            </div>
+          </div>
+
+          {!isCollapsed && (
+            <div className="ml-auto opacity-100 transition-opacity">
+              <div className="px-1.5 py-0.5 bg-purple-100 rounded text-[9px] font-bold text-purple-600">
+                PRO
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Free category or premium user - normal link
+    return (
+      <Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
+        <div
+          className={`
+            flex items-center py-2 px-2.5 rounded-lg transition-all group relative cursor-pointer mb-0.5
+            ${isActive(item)
+              ? "bg-blue-50 text-blue-700 font-semibold shadow-sm border border-blue-100/50"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent"}
+            ${isCollapsed ? "justify-center" : ""}
+          `}
+          title={isCollapsed ? item.name : ""}
+        >
+          <div className={`min-w-[20px] flex justify-center items-center transition-colors ${isActive(item) ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"}`}>
+            {item.icon}
+          </div>
+
+          <div className={`overflow-hidden transition-all duration-300 ${isCollapsed ? "w-0 opacity-0 ml-0" : "w-auto opacity-100 ml-3"}`}>
+            <span className="whitespace-nowrap text-sm font-medium">{item.name}</span>
+          </div>
+
+          {isActive(item) && !isCollapsed && (
+            <div className="ml-auto opacity-100 transition-opacity">
+              <ChevronRight size={14} className="text-blue-400" />
+            </div>
+          )}
+        </div>
+      </Link>
+    );
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 font-sans text-gray-900 text-sm">
 
@@ -137,7 +224,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 {mainMenuItems.map(renderMenuLink)}
                 <div className="my-3 border-t border-gray-100 mx-2"></div>
                 <p className="px-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('menu.categories')}</p>
-                {categoryMenuItems.map(renderMenuLink)}
+                {categoryMenuItems.map(renderCategoryLink)}
               </div>
 
               <div className="p-3 border-t bg-gray-50/50">
@@ -192,7 +279,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <div className="my-3 border-t border-gray-100 mx-2 opacity-60"></div>
 
           {!isCollapsed && <p className="px-2.5 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('menu.categories')}</p>}
-          {categoryMenuItems.map(renderMenuLink)}
+          {categoryMenuItems.map(renderCategoryLink)}
         </div>
 
         <div className="p-3 text-center">
@@ -277,6 +364,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+
+      {/* Premium Modal */}
+      <PremiumModal
+        isOpen={isPremiumModalOpen}
+        onClose={() => setIsPremiumModalOpen(false)}
+      />
     </div>
   );
 }

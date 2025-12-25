@@ -45,8 +45,10 @@
     "menu": {
         "overview": "Genel Bakış",
         "profile": "Profilim",
+        "connections": "Bağlantılar",
         "general": "Genel",
-        "categories": "Kategoriler"
+        "categories": "Kategoriler",
+        "getPremium": "Premium Al"
     },
     "profile": {
         "title": "Profilim",
@@ -67,9 +69,10 @@
     },
     "premium": {
         "title": "Premium'a Yükselt",
-        "subtitle": "Çoklu e-posta senkronizasyonu premium bir özelliktir",
-        "description": "Kayıtlı e-posta adresinizden farklı bir hesaptan e-posta senkronize etmeye çalışıyorsunuz. Birden fazla e-posta hesabını senkronize etmek için Premium'a yükseltin.",
-        "feature1": "Sınırsız e-posta hesabı senkronizasyonu",
+        "subtitle": "Tüm kategorilerin kilidini aç",
+        "description": "Alışveriş, Etkinlikler ve Abonelikler dahil tüm kategorilere erişmek için Premium'a yükseltin.",
+        "categoryLocked": "Bu kategori Premium gerektirir",
+        "feature1": "Tüm 5 kategoriye erişim",
         "feature2": "Gelişmiş yapay zeka analizi",
         "feature3": "Öncelikli destek",
         "feature4": "Verilerinizi istediğiniz zaman dışa aktarın",
@@ -82,5 +85,21 @@
         "label": "Dil",
         "en": "English",
         "tr": "Türkçe"
+    },
+    "connections": {
+        "title": "Bağlantılar",
+        "subtitle": "Bağlı hesaplarınızı ve e-posta kaynaklarınızı yönetin",
+        "loginAccount": "Giriş Hesabı",
+        "loginAccountDesc": "Olric'e giriş yapmak için kullandığınız hesap",
+        "syncedEmails": "Senkronize Edilen E-posta Hesapları",
+        "syncedEmailsDesc": "Yapay zeka tarafından analiz edilen e-posta hesapları",
+        "addAccount": "Başka Hesap Ekle",
+        "addAccountPremium": "Daha fazla hesap eklemek için Premium'a yükseltin",
+        "revoke": "Erişimi İptal Et",
+        "revokeConfirm": "Erişimi iptal etmek istediğinizden emin misiniz? Bu, e-posta senkronizasyonunu durduracaktır.",
+        "connectedVia": "{provider} ile bağlandı",
+        "lastSync": "Son senkronizasyon: {time}",
+        "noSyncedAccounts": "Henüz senkronize edilmiş e-posta hesabı yok",
+        "startSync": "Burada veri görmek için e-postalarınızı senkronize etmeye başlayın"
     }
 }

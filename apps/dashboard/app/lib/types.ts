@@ -3,6 +3,19 @@
 
 export type Category = 'TRAVEL' | 'FINANCE' | 'SHOPPING' | 'EVENT' | 'SUBSCRIPTION';
 
+// User subscription plan types
+export type UserPlan = 'FREE' | 'PREMIUM';
+
+// Categories accessible by free users
+export const FREE_CATEGORIES: Category[] = ['TRAVEL', 'FINANCE'];
+
+// Categories that require premium subscription
+export const PREMIUM_CATEGORIES: Category[] = ['SHOPPING', 'EVENT', 'SUBSCRIPTION'];
+
+// Helper to check if a category requires premium
+export const isPremiumCategory = (category: Category): boolean =>
+    PREMIUM_CATEGORIES.includes(category);
+
 export interface SmartItem {
     id?: string;
     category: Category;

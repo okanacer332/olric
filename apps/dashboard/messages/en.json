@@ -45,8 +45,10 @@
     "menu": {
         "overview": "Overview",
         "profile": "My Profile",
+        "connections": "Connections",
         "general": "General",
-        "categories": "Categories"
+        "categories": "Categories",
+        "getPremium": "Get Premium"
     },
     "profile": {
         "title": "My Profile",
@@ -67,9 +69,10 @@
     },
     "premium": {
         "title": "Upgrade to Premium",
-        "subtitle": "Multi-email sync is a premium feature",
-        "description": "You're trying to sync emails from a different account than your registered email. Upgrade to Premium to sync multiple email accounts.",
-        "feature1": "Sync unlimited email accounts",
+        "subtitle": "Unlock all categories",
+        "description": "Upgrade to Premium to access all categories including Shopping, Events, and Subscriptions.",
+        "categoryLocked": "This category requires Premium",
+        "feature1": "Access all 5 categories",
         "feature2": "Advanced AI analysis",
         "feature3": "Priority support",
         "feature4": "Export your data anytime",
@@ -82,5 +85,21 @@
         "label": "Language",
         "en": "English",
         "tr": "Türkçe"
+    },
+    "connections": {
+        "title": "Connections",
+        "subtitle": "Manage your connected accounts and email sources",
+        "loginAccount": "Login Account",
+        "loginAccountDesc": "The account you use to sign in to Olric",
+        "syncedEmails": "Synced Email Accounts",
+        "syncedEmailsDesc": "Email accounts being analyzed by AI",
+        "addAccount": "Add Another Account",
+        "addAccountPremium": "Upgrade to Premium to add more accounts",
+        "revoke": "Revoke Access",
+        "revokeConfirm": "Are you sure you want to revoke access? This will stop email synchronization.",
+        "connectedVia": "Connected via {provider}",
+        "lastSync": "Last synced: {time}",
+        "noSyncedAccounts": "No email accounts synced yet",
+        "startSync": "Start syncing your emails to see data here"
     }
 }
