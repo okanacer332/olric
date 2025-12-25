@@ -49,6 +49,15 @@ public class MicrosoftOAuthProvider implements OAuthProvider {
             // Step 1: Exchange code for tokens
             String tokenEndpoint = "https://login.microsoftonline.com/" + tenant + "/oauth2/v2.0/token";
 
+            // DEBUG: Log what we're sending (remove in production)
+            log.info("=== MICROSOFT TOKEN EXCHANGE DEBUG ===");
+            log.info("Token Endpoint: {}", tokenEndpoint);
+            log.info("Client ID: {}", clientId);
+            log.info("Client Secret: {}...", clientSecret != null && clientSecret.length() > 5 ? clientSecret.substring(0, 5) : "NULL");
+            log.info("Redirect URI: {}", redirectUri);
+            log.info("Code (first 20 chars): {}", code != null && code.length() > 20 ? code.substring(0, 20) : code);
+            log.info("======================================");
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -58,7 +67,8 @@ public class MicrosoftOAuthProvider implements OAuthProvider {
             params.add("code", code);
             params.add("grant_type", "authorization_code");
             params.add("redirect_uri", redirectUri);
-            params.add("scope", "openid profile email offline_access https://graph.microsoft.com/Mail.Read");
+            // Note: scope is NOT needed in token exchange, only in authorize request
+            // params.add("scope", "openid profile email offline_access https://graph.microsoft.com/Mail.Read");
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
             ResponseEntity<String> tokenResponse = restTemplate.postForEntity(tokenEndpoint, request, String.class);
