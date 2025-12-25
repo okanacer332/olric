@@ -1,42 +1,45 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
+export function middleware(req: NextRequest) {
+  const { searchParams } = req.nextUrl;
+
+  // Allow OAuth callback to pass through without auth check
+  // This prevents redirect loop when users return from Google OAuth
+  if (searchParams.get("success") === "true" && searchParams.has("user")) {
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { searchParams } = req.nextUrl;
-        const cookies = req.cookies;
-
-        // 1. URL'de bizim gönderdiğimiz 'user' (token) parametresi varsa -> GEÇ
-        // (Bu, backend'den dönerken takılmamak için kritik)
-        if (searchParams.get("success") === "true" && searchParams.has("user")) {
-          return true;
-        }
-
-        // 2. Cookie'de bizim 'auth_token' varsa -> GEÇ
-        // (Sayfa yenilendiğinde takılmamak için kritik)
-        if (cookies.has("auth_token")) {
-          return true;
-        }
-
-        // 3. NextAuth token'ı varsa -> GEÇ
-        if (token) return true;
-
-        // Hiçbiri yoksa -> KAL
-        return false;
-      },
-    },
-    pages: {
-      signIn: "http://localhost:3000", // Yetkisizleri buraya at
-    },
   }
-);
 
-export const config = { 
+  // For all other routes, use NextAuth middleware
+  return (withAuth(
+    function middleware(req) {
+      return NextResponse.next();
+    },
+    {
+      callbacks: {
+        authorized: ({ token, req }) => {
+          const cookies = req.cookies;
+
+          // Check for our custom auth token cookie
+          if (cookies.has("auth_token")) {
+            return true;
+          }
+
+          // Check for NextAuth token
+          if (token) return true;
+
+          return false;
+        },
+      },
+      pages: {
+        signIn: "http://localhost:3000",
+      },
+    }
+  ) as any)(req);
+}
+
+export const config = {
   // API, static dosyalar ve favicon hariç her yeri koru
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"] 
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"]
 };
