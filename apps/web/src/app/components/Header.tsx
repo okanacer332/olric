@@ -1,9 +1,29 @@
 import { Button } from "@repo/ui/components/ui/button"; // Ortak bileşeni çekiyoruz
 
+/**
+ * Get the correct API URL based on the current domain.
+ * - okanacer.xyz → https://api.okanacer.xyz/api
+ * - localhost → http://localhost:8080/api
+ */
+function getApiUrl(): string {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+
+    // Production domain
+    if (hostname === 'okanacer.xyz' || hostname.endsWith('.okanacer.xyz')) {
+      return 'https://api.okanacer.xyz/api';
+    }
+  }
+
+  // Development fallback
+  return 'http://localhost:8080/api';
+}
+
 export function Header() {
   const handleLogin = () => {
-    // Backend Login kapısına yönlendiriyoruz
-    window.location.href = "http://localhost:8080/api/auth/login/google";
+    // Backend Login kapısına yönlendiriyoruz - using dynamic API URL
+    const apiUrl = getApiUrl();
+    window.location.href = `${apiUrl}/auth/login/google`;
   };
 
   return (
@@ -45,9 +65,9 @@ export function Header() {
               <span className="text-gray-300">|</span>
               <span className="text-gray-400">TR</span>
             </div>
-            
+
             {/* Shared UI Button Kullanımı */}
-            <Button 
+            <Button
               onClick={handleLogin}
               className="bg-[#0c1844] hover:bg-[#1e3a8a] text-white px-6 py-2.5 rounded-full transition-colors shadow-sm h-auto font-normal"
             >

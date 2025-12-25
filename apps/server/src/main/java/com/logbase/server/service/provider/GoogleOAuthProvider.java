@@ -22,8 +22,9 @@ public class GoogleOAuthProvider implements OAuthProvider {
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String clientSecret;
 
-    // Frontend'in yönlendirdiği redirect URI ile AYNISI olmalı
-    private final String REDIRECT_URI = "http://localhost:8080/api/auth/callback/google";
+    // Redirect URI from configuration - supports both dev and production
+    @Value("${google.redirect.uri}")
+    private String redirectUri;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,7 +47,7 @@ public class GoogleOAuthProvider implements OAuthProvider {
         map.add("client_secret", clientSecret);
         map.add("code", code);
         map.add("grant_type", "authorization_code");
-        map.add("redirect_uri", REDIRECT_URI);
+        map.add("redirect_uri", redirectUri);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
         ResponseEntity<String> tokenResponse = restTemplate.postForEntity(tokenEndpoint, request, String.class);
