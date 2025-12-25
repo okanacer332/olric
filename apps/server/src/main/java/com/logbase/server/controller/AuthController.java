@@ -35,6 +35,9 @@ public class AuthController {
             // Use provided redirectUrl or fall back to configured dashboardUrl
             String stateParam = (redirectUrl != null && !redirectUrl.isEmpty()) ? redirectUrl : dashboardUrl;
             
+            // URL encode the state parameter to handle special characters
+            String encodedState = java.net.URLEncoder.encode(stateParam, java.nio.charset.StandardCharsets.UTF_8);
+            
             String url = "https://accounts.google.com/o/oauth2/v2/auth" +
                     "?client_id=" + googleClientId +
                     "&redirect_uri=" + googleRedirectUri +
@@ -42,7 +45,7 @@ public class AuthController {
                     "&scope=email profile https://www.googleapis.com/auth/gmail.readonly" +
                     "&access_type=offline" +
                     "&prompt=consent" +
-                    "&state=" + stateParam;
+                    "&state=" + encodedState;
 
             response.sendRedirect(url);
         }
@@ -62,7 +65,8 @@ public class AuthController {
             // Otherwise fall back to configured dashboard URL
             String redirectUrl;
             if (state != null && !state.isEmpty()) {
-                redirectUrl = state;
+                // URL decode the state parameter
+                redirectUrl = java.net.URLDecoder.decode(state, java.nio.charset.StandardCharsets.UTF_8);
             } else {
                 redirectUrl = dashboardUrl;
             }
@@ -73,7 +77,9 @@ public class AuthController {
         } catch (Exception e) {
             e.printStackTrace();
             // On error, redirect to dashboard with error parameter
-            String redirectUrl = (state != null && !state.isEmpty()) ? state : dashboardUrl;
+            String redirectUrl = (state != null && !state.isEmpty()) 
+                ? java.net.URLDecoder.decode(state, java.nio.charset.StandardCharsets.UTF_8) 
+                : dashboardUrl;
             response.sendRedirect(redirectUrl + "/dashboard?error=auth_failed");
         }
     }

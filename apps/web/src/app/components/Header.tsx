@@ -19,11 +19,32 @@ function getApiUrl(): string {
   return 'http://localhost:8080/api';
 }
 
+/**
+ * Get the correct Dashboard URL based on the current domain.
+ * - okanacer.xyz → https://okanacer.xyz
+ * - localhost → http://localhost:3001 (dashboard runs on port 3001)
+ */
+function getDashboardUrl(): string {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+
+    // Production domain
+    if (hostname === 'okanacer.xyz' || hostname.endsWith('.okanacer.xyz')) {
+      return 'https://okanacer.xyz';
+    }
+  }
+
+  // Development fallback - dashboard is on port 3001
+  return 'http://localhost:3001';
+}
+
 export function Header() {
   const handleLogin = () => {
     // Backend Login kapısına yönlendiriyoruz - using dynamic API URL
     const apiUrl = getApiUrl();
-    window.location.href = `${apiUrl}/auth/login/google`;
+    const dashboardUrl = getDashboardUrl();
+    // Pass the dashboard URL as redirectUrl so OAuth callback knows where to redirect
+    window.location.href = `${apiUrl}/auth/login/google?redirectUrl=${encodeURIComponent(dashboardUrl)}`;
   };
 
   return (
