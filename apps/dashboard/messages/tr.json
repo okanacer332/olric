@@ -1,0 +1,86 @@
+{
+    "common": {
+        "loading": "Yükleniyor...",
+        "error": "Hata",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "signOut": "Çıkış Yap",
+        "maybeLater": "Belki Sonra"
+    },
+    "dashboard": {
+        "greeting": "Merhaba, {name} 👋",
+        "subtitle": "Yapay zeka ile organize edilmiş dijital yaşamınız.",
+        "categorySubtitle": "Bu kategorideki tüm verilerinizi yönetin ve görüntüleyin.",
+        "breadcrumb": "Panel"
+    },
+    "landing": {
+        "title": "Yapay Zeka Destekli Yaşam Organizatörü",
+        "subtitle": "E-postalarınızı yapay zekanın analiz etmesine ve hayatınızı otomatik olarak düzenlemesine izin verin.",
+        "loginButton": "Google ile Giriş Yap"
+    },
+    "categories": {
+        "travel": "Seyahat",
+        "finance": "Finans",
+        "shopping": "Alışveriş",
+        "events": "Etkinlikler",
+        "subscriptions": "Abonelikler",
+        "overview": "Genel Bakış"
+    },
+    "categoryDescriptions": {
+        "travel": "Uçuşlar, oteller ve rezervasyonlar",
+        "finance": "Faturalar, makbuzlar ve ödemeler",
+        "shopping": "Siparişler, teslimatlar ve kargolar",
+        "events": "Konserler, etkinlikler ve biletler",
+        "subscriptions": "Düzenli ödemeler ve planlar"
+    },
+    "sync": {
+        "button": "E-posta Senkronize Et",
+        "connecting": "Gmail'e bağlanılıyor...",
+        "searching": "İlgili e-postalar aranıyor...",
+        "extracting": "E-posta içerikleri çıkarılıyor ({current}/{total})",
+        "analyzing": "Yapay zeka analiz ediyor {batch}/{total}...",
+        "completed": "Derin Tarama Tamamlandı!",
+        "idle": "Beklemede"
+    },
+    "menu": {
+        "overview": "Genel Bakış",
+        "profile": "Profilim",
+        "general": "Genel",
+        "categories": "Kategoriler"
+    },
+    "profile": {
+        "title": "Profilim",
+        "subtitle": "Hesap ayarlarınızı ve tercihlerinizi yönetin",
+        "accountInfo": "Hesap Bilgileri",
+        "email": "E-posta",
+        "accountId": "Hesap ID",
+        "freePlan": "Ücretsiz Plan"
+    },
+    "table": {
+        "title": "Başlık",
+        "vendor": "Satıcı",
+        "date": "Tarih",
+        "amount": "Tutar",
+        "status": "Durum",
+        "noItems": "Bu kategoride öğe bulunamadı.",
+        "items": "{count} öğe"
+    },
+    "premium": {
+        "title": "Premium'a Yükselt",
+        "subtitle": "Çoklu e-posta senkronizasyonu premium bir özelliktir",
+        "description": "Kayıtlı e-posta adresinizden farklı bir hesaptan e-posta senkronize etmeye çalışıyorsunuz. Birden fazla e-posta hesabını senkronize etmek için Premium'a yükseltin.",
+        "feature1": "Sınırsız e-posta hesabı senkronizasyonu",
+        "feature2": "Gelişmiş yapay zeka analizi",
+        "feature3": "Öncelikli destek",
+        "feature4": "Verilerinizi istediğiniz zaman dışa aktarın",
+        "price": "₺299",
+        "perMonth": "/ay",
+        "cancelAnytime": "İstediğiniz zaman iptal edin",
+        "upgradeButton": "Premium'a Yükselt"
+    },
+    "language": {
+        "label": "Dil",
+        "en": "English",
+        "tr": "Türkçe"
+    }
+}

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard, User, Menu, X, LogOut, Plane, PanelLeftClose, PanelLeftOpen,
   Bell, Wallet, ShoppingBag, Calendar, CreditCard, Layers, ChevronRight, Globe, Loader2, RefreshCw
 } from "lucide-react";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,6 +24,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const userParam = searchParams.get("user");
   const currentCategory = searchParams.get("category");
   const ICON_SIZE = 18;
+
+  // i18n translations
+  const t = useTranslations();
 
   // --- KESİN ÇÖZÜM: AKILLI AUTO-LOGIN ---
   useEffect(() => {
@@ -48,22 +53,22 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-50 flex-col gap-4">
         <Loader2 className="w-10 h-10 text-[#0c1844] animate-spin" />
-        <p className="text-gray-500 font-medium">Hesabınız doğrulanıyor...</p>
+        <p className="text-gray-500 font-medium">{t('common.loading')}</p>
       </div>
     );
   }
 
   const mainMenuItems = [
-    { name: "Overview", href: "/", icon: <LayoutDashboard size={ICON_SIZE} />, exact: true },
-    { name: "My Profile", href: "/dashboard/profile", icon: <User size={ICON_SIZE} />, exact: false },
+    { name: t('menu.overview'), href: "/", icon: <LayoutDashboard size={ICON_SIZE} />, exact: true },
+    { name: t('menu.profile'), href: "/dashboard/profile", icon: <User size={ICON_SIZE} />, exact: false },
   ];
 
   const categoryMenuItems = [
-    { name: "Travel", href: "/?category=TRAVEL", icon: <Plane size={ICON_SIZE} />, id: "TRAVEL" },
-    { name: "Finance", href: "/?category=FINANCE", icon: <Wallet size={ICON_SIZE} />, id: "FINANCE" },
-    { name: "Shopping", href: "/?category=SHOPPING", icon: <ShoppingBag size={ICON_SIZE} />, id: "SHOPPING" },
-    { name: "Events", href: "/?category=EVENT", icon: <Calendar size={ICON_SIZE} />, id: "EVENT" },
-    { name: "Subscriptions", href: "/?category=SUBSCRIPTION", icon: <CreditCard size={ICON_SIZE} />, id: "SUBSCRIPTION" },
+    { name: t('categories.travel'), href: "/?category=TRAVEL", icon: <Plane size={ICON_SIZE} />, id: "TRAVEL" },
+    { name: t('categories.finance'), href: "/?category=FINANCE", icon: <Wallet size={ICON_SIZE} />, id: "FINANCE" },
+    { name: t('categories.shopping'), href: "/?category=SHOPPING", icon: <ShoppingBag size={ICON_SIZE} />, id: "SHOPPING" },
+    { name: t('categories.events'), href: "/?category=EVENT", icon: <Calendar size={ICON_SIZE} />, id: "EVENT" },
+    { name: t('categories.subscriptions'), href: "/?category=SUBSCRIPTION", icon: <CreditCard size={ICON_SIZE} />, id: "SUBSCRIPTION" },
   ];
 
   const isActive = (item: any) => {
@@ -128,10 +133,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className="flex-1 p-3 overflow-y-auto space-y-1">
-                <p className="px-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 mt-2">General</p>
+                <p className="px-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 mt-2">{t('menu.general')}</p>
                 {mainMenuItems.map(renderMenuLink)}
                 <div className="my-3 border-t border-gray-100 mx-2"></div>
-                <p className="px-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Categories</p>
+                <p className="px-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('menu.categories')}</p>
                 {categoryMenuItems.map(renderMenuLink)}
               </div>
 
@@ -146,7 +151,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-900 truncate">{session?.user?.name || "User"}</p>
-                    <button onClick={() => signOut({ callbackUrl: "http://localhost:3000" })} className="text-[10px] text-red-600 font-bold hover:underline">Sign Out</button>
+                    <button onClick={() => signOut({ callbackUrl: "http://localhost:3000" })} className="text-[10px] text-red-600 font-bold hover:underline">{t('common.signOut')}</button>
                   </div>
                 </div>
               </div>
@@ -181,12 +186,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex-1 py-4 px-2 overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col gap-0.5">
-          {!isCollapsed && <p className="px-2.5 mb-1.5 mt-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">General</p>}
+          {!isCollapsed && <p className="px-2.5 mb-1.5 mt-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('menu.general')}</p>}
           {mainMenuItems.map(renderMenuLink)}
 
           <div className="my-3 border-t border-gray-100 mx-2 opacity-60"></div>
 
-          {!isCollapsed && <p className="px-2.5 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Categories</p>}
+          {!isCollapsed && <p className="px-2.5 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('menu.categories')}</p>}
           {categoryMenuItems.map(renderMenuLink)}
         </div>
 
@@ -211,12 +216,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <header className="hidden md:flex items-center justify-between bg-white h-16 px-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 text-gray-500 font-medium text-sm">
             <Layers size={16} className="text-gray-400" />
-            <span>Dashboard</span>
+            <span>{t('dashboard.breadcrumb')}</span>
             {currentCategory && (
               <>
                 <span className="text-gray-300">/</span>
                 <span className="text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs border border-blue-100">
-                  {currentCategory.charAt(0) + currentCategory.slice(1).toLowerCase()}
+                  {t(`categories.${currentCategory.toLowerCase()}`)}
                 </span>
               </>
             )}
@@ -226,7 +231,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             {/* Sync Button */}
             <button
               onClick={() => {
-                // Trigger sync via global function exposed by page.tsx
                 if (typeof (window as any).__triggerSync === 'function') {
                   (window as any).__triggerSync();
                 }
@@ -234,8 +238,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
             >
               <RefreshCw size={16} />
-              <span>Synchronize Email</span>
+              <span>{t('sync.button')}</span>
             </button>
+
+            {/* Language Switcher */}
+            <LanguageSwitcher />
 
             <button className="relative p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition">
               <Bell size={18} />
@@ -258,7 +265,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               )}
             </button>
 
-            <button onClick={() => signOut({ callbackUrl: "http://localhost:3000" })} className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Sign Out">
+            <button onClick={() => signOut({ callbackUrl: "http://localhost:3000" })} className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors" title={t('common.signOut')}>
               <LogOut size={16} />
             </button>
           </div>

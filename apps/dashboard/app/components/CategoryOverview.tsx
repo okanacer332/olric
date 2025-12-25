@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { DashboardStats, Category } from '../lib/types';
 import { getCategoryTheme } from '../lib/categoryTheme';
 import { CategoryCard } from './CategoryCard';
@@ -15,6 +16,7 @@ interface CategoryOverviewProps {
  */
 export function CategoryOverview({ stats }: CategoryOverviewProps) {
     const router = useRouter();
+    const t = useTranslations();
 
     const handleCategoryClick = (category: Category) => {
         router.push(`/?category=${category}`);
@@ -23,7 +25,7 @@ export function CategoryOverview({ stats }: CategoryOverviewProps) {
     const categories: { category: Category; value: string | number; subtitle?: string }[] = [
         {
             category: 'TRAVEL',
-            value: `${stats?.travel_count || 0} Trips Found`
+            value: `${stats?.travel_count || 0} ${t('categories.travel')}`
         },
         {
             category: 'FINANCE',
@@ -31,16 +33,16 @@ export function CategoryOverview({ stats }: CategoryOverviewProps) {
         },
         {
             category: 'SHOPPING',
-            value: `${stats?.shopping_count || 0} Orders`
+            value: `${stats?.shopping_count || 0} ${t('categories.shopping')}`
         },
         {
             category: 'EVENT',
-            value: `${stats?.events_count || 0} Upcoming`
+            value: `${stats?.events_count || 0} ${t('categories.events')}`
         },
         {
             category: 'SUBSCRIPTION',
             value: stats?.subscription_count || 0,
-            subtitle: 'Active'
+            subtitle: t('categories.subscriptions')
         },
     ];
 

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 // Black box modules
 import { useAuth } from "./hooks/useAuth";
@@ -40,6 +41,9 @@ function DashboardContent() {
     token,
     refetch
   );
+
+  // i18n translations
+  const t = useTranslations();
 
   // Handle sync trigger from DashboardShell
   const handleSyncTrigger = useCallback(async () => {
@@ -96,17 +100,17 @@ function DashboardContent() {
       <div className="mb-6 sm:mb-8">
         {selectedCategory ? (
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            {currentTheme?.label}
+            {t(`categories.${selectedCategory.toLowerCase()}`)}
           </h1>
         ) : (
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Hi, <span className="capitalize">{userName}</span> 👋
+            {t('dashboard.greeting', { name: userName })}
           </h1>
         )}
         <p className="text-gray-500 mt-1 text-sm sm:text-base">
           {selectedCategory
-            ? "Manage and view all your data in this category."
-            : "Your entire digital life, organized by AI."}
+            ? t('dashboard.categorySubtitle')
+            : t('dashboard.subtitle')}
         </p>
       </div>
 

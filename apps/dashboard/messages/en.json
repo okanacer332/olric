@@ -1,0 +1,86 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "save": "Save",
+        "cancel": "Cancel",
+        "signOut": "Sign Out",
+        "maybeLater": "Maybe Later"
+    },
+    "dashboard": {
+        "greeting": "Hi, {name} 👋",
+        "subtitle": "Your entire digital life, organized by AI.",
+        "categorySubtitle": "Manage and view all your data in this category.",
+        "breadcrumb": "Dashboard"
+    },
+    "landing": {
+        "title": "AI-Powered Life Organizer",
+        "subtitle": "Let AI analyze your emails and organize your life automatically.",
+        "loginButton": "Sign in with Google"
+    },
+    "categories": {
+        "travel": "Travel",
+        "finance": "Finance",
+        "shopping": "Shopping",
+        "events": "Events",
+        "subscriptions": "Subscriptions",
+        "overview": "Overview"
+    },
+    "categoryDescriptions": {
+        "travel": "Flights, hotels and reservations",
+        "finance": "Receipts, invoices and payments",
+        "shopping": "Orders, deliveries and packages",
+        "events": "Concerts, events and tickets",
+        "subscriptions": "Recurring payments and plans"
+    },
+    "sync": {
+        "button": "Synchronize Email",
+        "connecting": "Connecting to Gmail...",
+        "searching": "Searching for relevant emails...",
+        "extracting": "Extracting email contents ({current}/{total})",
+        "analyzing": "AI analyzing context {batch}/{total}...",
+        "completed": "Deep Scan Completed!",
+        "idle": "Idle"
+    },
+    "menu": {
+        "overview": "Overview",
+        "profile": "My Profile",
+        "general": "General",
+        "categories": "Categories"
+    },
+    "profile": {
+        "title": "My Profile",
+        "subtitle": "Manage your account settings and preferences",
+        "accountInfo": "Account Information",
+        "email": "Email",
+        "accountId": "Account ID",
+        "freePlan": "Free Plan"
+    },
+    "table": {
+        "title": "Title",
+        "vendor": "Vendor",
+        "date": "Date",
+        "amount": "Amount",
+        "status": "Status",
+        "noItems": "No items found in this category.",
+        "items": "{count} items"
+    },
+    "premium": {
+        "title": "Upgrade to Premium",
+        "subtitle": "Multi-email sync is a premium feature",
+        "description": "You're trying to sync emails from a different account than your registered email. Upgrade to Premium to sync multiple email accounts.",
+        "feature1": "Sync unlimited email accounts",
+        "feature2": "Advanced AI analysis",
+        "feature3": "Priority support",
+        "feature4": "Export your data anytime",
+        "price": "$9",
+        "perMonth": "/month",
+        "cancelAnytime": "Cancel anytime",
+        "upgradeButton": "Upgrade to Premium"
+    },
+    "language": {
+        "label": "Language",
+        "en": "English",
+        "tr": "Türkçe"
+    }
+}
