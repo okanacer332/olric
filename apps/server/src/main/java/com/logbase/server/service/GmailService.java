@@ -10,59 +10,68 @@ import com.google.api.services.gmail.model.MessagePartHeader;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.logbase.server.config.CategoryDefinitions;
 import com.logbase.server.model.AuthProvider;
 import com.logbase.server.model.ConnectedAccount;
 import com.logbase.server.model.SmartItem;
 import com.logbase.server.model.User;
-import com.logbase.server.repository.SmartItemRepository;
 import com.logbase.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Gmail Email Sync Service.
+ * 
+ * DESIGN PRINCIPLES:
+ * - Uses comprehensive search queries from CategoryDefinitions
+ * - Integrates EmailDeduplicator to prevent duplicate items
+ * - Provider name: "GMAIL" (for future Outlook support)
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class GmailService {
 
-    private static final String APPLICATION_NAME = "LogBase-Server";
+    private static final String APPLICATION_NAME = "Olric-Server";
+    private static final String PROVIDER_NAME = "GMAIL";
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+    
+    // Maximum emails to fetch per sync
+    private static final long MAX_EMAILS = 300L;
+    // Batch size for AI analysis
+    private static final int AI_BATCH_SIZE = 15;
 
     private final GeminiService geminiService;
-    private final SmartItemRepository smartItemRepository;
+    private final EmailDeduplicator emailDeduplicator;
     private final SyncManager syncManager;
-    private final UserRepository userRepository; // EKLENDİ: Token'ı buradan çekeceğiz
+    private final UserRepository userRepository;
 
     /**
-     * DIŞ DÜNYADAN ÇAĞRILAN TEK METOD.
-     * Artık sadece userId alıyor. Token'ı kendisi buluyor.
+     * Main entry point for email synchronization.
+     * Runs asynchronously to not block the caller.
      */
     public void syncEmails(String userId) {
-        // Asenkron başlat (Fire and Forget - Şimdilik)
         CompletableFuture.runAsync(() -> {
             try {
-                // 1. Kullanıcıyı Bul (userId aslında email)
+                // 1. Find user and get Google token
                 User user = userRepository.findByEmail(userId)
                         .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-                // 2. Google Token'ını Çek
                 String accessToken = getGoogleAccessToken(user);
-
                 if (accessToken == null) {
                     syncManager.updateStatus(userId, "Google account not linked.", 0);
                     return;
                 }
 
-                // 3. İşlemi Başlat
+                // 2. Perform sync
                 performSync(accessToken, userId);
 
             } catch (Exception e) {
-                log.error("Sync başlatma hatası", e);
+                log.error("Sync initialization error", e);
                 syncManager.updateStatus(userId, "Error: " + e.getMessage(), 0);
             }
         });
@@ -70,11 +79,10 @@ public class GmailService {
 
     private void performSync(String accessToken, String userId) {
         try {
-            syncManager.updateStatus(userId, "Connecting to Deep Scan...", 5);
+            syncManager.updateStatus(userId, "Connecting to Gmail...", 5);
 
-            // Google Credentials Oluştur (Sadece Access Token ile)
+            // Build Gmail client
             GoogleCredentials credentials = GoogleCredentials.create(new AccessToken(accessToken, null));
-
             Gmail service = new Gmail.Builder(
                     GoogleNetHttpTransport.newTrustedTransport(),
                     JSON_FACTORY,
@@ -82,36 +90,33 @@ public class GmailService {
                     .setApplicationName(APPLICATION_NAME)
                     .build();
 
-            // KAPSAYICI SORGU (Senin Orijinal Sorgun)
-            String query = "(" +
-                    "subject:(flight OR ucus OR bilet OR ticket OR booking OR rezervasyon OR confirmation OR onay OR 'your trip' OR seyahat) OR " +
-                    "subject:(fatura OR receipt OR invoice OR payment OR odeme OR islem OR dekont) OR " +
-                    "subject:(order OR siparis OR kargo OR delivery OR gonderi OR paket) OR " +
-                    "subject:(subscription OR abonelik OR renewal OR yenileme OR plan) OR " +
-                    "subject:(konser OR concert OR biletix OR passo OR etkinlik)" +
-                    ") newer_than:1y";
-
+            // Use comprehensive search query
+            String query = CategoryDefinitions.buildCombinedSearchQuery();
+            log.info("Gmail search query: {}", query);
+            
             syncManager.updateStatus(userId, "Searching for relevant emails...", 10);
 
             ListMessagesResponse response = service.users().messages().list("me")
                     .setQ(query)
-                    .setMaxResults(200L) // Limit 200
+                    .setMaxResults(MAX_EMAILS)
                     .execute();
 
             List<Message> messages = response.getMessages();
 
             if (messages == null || messages.isEmpty()) {
-                syncManager.updateStatus(userId, "No relevant emails found via Deep Scan", 100);
+                syncManager.updateStatus(userId, "No relevant emails found.", 100);
                 return;
             }
 
             int totalEmails = messages.size();
-            syncManager.updateStatus(userId, "Found " + totalEmails + " candidates. Extracting content...", 15);
+            log.info("Found {} candidate emails for user {}", totalEmails, userId);
+            syncManager.updateStatus(userId, "Found " + totalEmails + " candidates. Processing...", 15);
 
-            List<Map<String, String>> allBatchData = new ArrayList<>();
+            // Fetch full email content
+            List<Map<String, String>> allEmailData = new ArrayList<>();
+            Map<String, String> emailIdMap = new HashMap<>(); // Map index to messageId
             int downloadedCount = 0;
 
-            // --- EMAILLERI İNDİRME DÖNGÜSÜ ---
             for (Message msg : messages) {
                 try {
                     Message fullMsg = service.users().messages().get("me", msg.getId())
@@ -124,65 +129,79 @@ public class GmailService {
 
                     if (fullMsg.getPayload().getHeaders() != null) {
                         for (MessagePartHeader h : fullMsg.getPayload().getHeaders()) {
-                            if ("Subject".equalsIgnoreCase(h.getName())) subject = h.getValue();
-                            else if ("From".equalsIgnoreCase(h.getName())) from = h.getValue();
-                            else if ("Date".equalsIgnoreCase(h.getName())) date = h.getValue();
+                            String headerName = h.getName();
+                            if ("Subject".equalsIgnoreCase(headerName)) subject = h.getValue();
+                            else if ("From".equalsIgnoreCase(headerName)) from = h.getValue();
+                            else if ("Date".equalsIgnoreCase(headerName)) date = h.getValue();
                         }
                     }
 
                     String rawBody = getEmailBody(fullMsg.getPayload());
-
-                    // Temizlik
-                    String cleanBody = rawBody.replaceAll("\\<.*?\\>", " ")
-                            .replaceAll("\\s+", " ")
-                            .trim();
-
-                    // Çok uzun mailleri kırp (Token limiti yememek için)
-                    if (cleanBody.length() > 2500) {
-                        cleanBody = cleanBody.substring(0, 2500);
-                    }
+                    String cleanBody = cleanEmailContent(rawBody);
 
                     Map<String, String> data = new HashMap<>();
+                    data.put("messageId", msg.getId());
                     data.put("subject", subject);
                     data.put("snippet", cleanBody);
                     data.put("sender", from);
                     data.put("date", date);
-                    allBatchData.add(data);
+                    allEmailData.add(data);
+                    emailIdMap.put(String.valueOf(allEmailData.size()), msg.getId());
 
                     downloadedCount++;
                     int progress = 15 + (int)((double)downloadedCount / totalEmails * 35);
-                    syncManager.updateStatus(userId, "Extracting email contents (" + downloadedCount + "/" + totalEmails + ")", progress);
+                    syncManager.updateStatus(userId, 
+                        "Extracting content (" + downloadedCount + "/" + totalEmails + ")", progress);
 
                 } catch (Exception e) {
-                    log.warn("Mail okuma hatası (Atlanıyor): {}", e.getMessage());
+                    log.warn("Failed to read email (skipping): {}", e.getMessage());
                 }
             }
 
-            // --- AI ANALİZ DÖNGÜSÜ (Batch Processing) ---
-            int batchSize = 15;
-            int totalBatches = (int) Math.ceil((double) allBatchData.size() / batchSize);
+            log.info("Downloaded {} emails successfully", allEmailData.size());
+
+            // AI Analysis in batches
+            int totalBatches = (int) Math.ceil((double) allEmailData.size() / AI_BATCH_SIZE);
+            int savedCount = 0;
+            int duplicateCount = 0;
 
             syncManager.updateStatus(userId, "AI Deep Analysis starting...", 50);
 
             for (int i = 0; i < totalBatches; i++) {
-                int start = i * batchSize;
-                int end = Math.min(start + batchSize, allBatchData.size());
-                List<Map<String, String>> batch = allBatchData.subList(start, end);
+                int start = i * AI_BATCH_SIZE;
+                int end = Math.min(start + AI_BATCH_SIZE, allEmailData.size());
+                List<Map<String, String>> batch = allEmailData.subList(start, end);
 
                 int currentProgress = 50 + (int)((double)(i + 1) / totalBatches * 45);
-                syncManager.updateStatus(userId, "AI analyzing context " + (i + 1) + "/" + totalBatches + "...", currentProgress);
+                syncManager.updateStatus(userId, 
+                    "AI analyzing batch " + (i + 1) + "/" + totalBatches + "...", currentProgress);
 
-                // Gemini'ye sor
+                // Get AI analysis
                 List<SmartItem> foundItems = geminiService.analyzeBatch(batch);
 
                 if (foundItems != null && !foundItems.isEmpty()) {
-                    for (SmartItem item : foundItems) {
-                        item.setUserId(userId);
-                        smartItemRepository.save(item);
+                    for (int j = 0; j < foundItems.size(); j++) {
+                        SmartItem item = foundItems.get(j);
+                        
+                        // Get the original email ID (approximate - match by index in batch)
+                        String emailId = batch.size() > j ? batch.get(j).get("messageId") : null;
+                        
+                        // Use deduplicator to save
+                        boolean saved = emailDeduplicator.saveIfNotDuplicate(
+                            item, userId, emailId, PROVIDER_NAME);
+                        
+                        if (saved) {
+                            savedCount++;
+                        } else {
+                            duplicateCount++;
+                        }
                     }
                 }
             }
-            syncManager.updateStatus(userId, "Deep Scan Completed!", 100);
+
+            log.info("Sync complete: {} saved, {} duplicates skipped", savedCount, duplicateCount);
+            syncManager.updateStatus(userId, 
+                "Deep Scan Completed! " + savedCount + " new items found.", 100);
 
         } catch (Exception e) {
             log.error("Sync Error", e);
@@ -190,12 +209,8 @@ public class GmailService {
         }
     }
 
-    // --- YARDIMCI METODLAR ---
+    // --- Helper Methods ---
 
-    /**
-     * User objesinin içindeki ConnectedAccounts listesini tarar,
-     * GOOGLE sağlayıcısını bulup AccessToken'ı döner.
-     */
     private String getGoogleAccessToken(User user) {
         if (user.getConnectedAccounts() == null) return null;
 
@@ -213,16 +228,41 @@ public class GmailService {
         }
         if (part.getParts() != null) {
             for (MessagePart subPart : part.getParts()) {
-                if (subPart.getMimeType().equals("text/plain")) {
+                String mimeType = subPart.getMimeType();
+                if ("text/plain".equals(mimeType)) {
                     return getEmailBody(subPart);
-                } else if (subPart.getMimeType().equals("text/html")) {
+                } else if ("text/html".equals(mimeType)) {
                     body = getEmailBody(subPart);
-                } else if (subPart.getMimeType().startsWith("multipart/")) {
+                } else if (mimeType != null && mimeType.startsWith("multipart/")) {
                     String found = getEmailBody(subPart);
                     if (!found.isEmpty()) return found;
                 }
             }
         }
         return body;
+    }
+
+    /**
+     * Cleans email content by removing HTML tags and normalizing whitespace.
+     * Truncates to prevent token limit issues.
+     */
+    private String cleanEmailContent(String rawBody) {
+        if (rawBody == null) return "";
+        
+        String cleaned = rawBody
+            .replaceAll("<[^>]*>", " ")  // Remove HTML tags
+            .replaceAll("&nbsp;", " ")    // Remove HTML entities
+            .replaceAll("&amp;", "&")
+            .replaceAll("&lt;", "<")
+            .replaceAll("&gt;", ">")
+            .replaceAll("\\s+", " ")      // Normalize whitespace
+            .trim();
+        
+        // Truncate to prevent token limit issues (keep first 3000 chars)
+        if (cleaned.length() > 3000) {
+            cleaned = cleaned.substring(0, 3000);
+        }
+        
+        return cleaned;
     }
 }

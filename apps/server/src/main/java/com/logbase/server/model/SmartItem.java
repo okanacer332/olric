@@ -2,10 +2,13 @@ package com.logbase.server.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Document(collection = "smart_items")
+@CompoundIndex(name = "user_email_hash_idx", def = "{'userId': 1, 'emailHash': 1}", unique = true)
 public class SmartItem {
     @Id
     private String id;
@@ -33,5 +36,13 @@ public class SmartItem {
     private String departure;
     private String arrival;
 
-    private String originalEmailId; // Tekrar taramamak için
+    // Deduplication fields
+    private String originalEmailId; // Message ID from email provider
+    private String emailHash;       // Hash of key fields for duplicate detection
+    
+    // Confidence score from LLM (0.0 - 1.0)
+    private Double confidence;
+    
+    // Email provider source
+    private String emailProvider;   // "GMAIL", "OUTLOOK"
 }
