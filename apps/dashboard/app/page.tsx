@@ -9,9 +9,9 @@ import {
   Plane, Wallet, ShoppingBag, Calendar, CreditCard, ChevronLeft, Search
 } from "lucide-react";
 import axios from "axios";
-import OnboardingModal from "@/src/components/OnboardingModal"; 
+// import OnboardingModal from "@/src/components/OnboardingModal"; // Eğer bu dosya yoksa yorum satırı kalabilir
 
-// --- TİP TANIMLAMALARI ---
+// ... TİP TANIMLAMALARI (AYNI KALSIN) ...
 interface SmartItem {
   id?: string;
   category: 'TRAVEL' | 'FINANCE' | 'SHOPPING' | 'EVENT' | 'SUBSCRIPTION';
@@ -51,7 +51,6 @@ function DashboardContent() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMismatchModal, setShowMismatchModal] = useState(false);
   
-  // URL'den kategoriyi al
   const categoryParam = searchParams.get("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam);
   
@@ -61,17 +60,17 @@ function DashboardContent() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-  // URL değişince state güncelle
   useEffect(() => {
     setSelectedCategory(categoryParam);
   }, [categoryParam]);
 
   const handleBackToOverview = () => {
-    router.push("/dashboard");
+    // BasePath kullandığımız için sadece "/" yeterli
+    router.push("/");
   };
 
   const handleWidgetClick = (cat: string) => {
-    router.push(`/dashboard?category=${cat}`);
+    router.push(`/?category=${cat}`);
   };
 
   useEffect(() => {
@@ -82,13 +81,14 @@ function DashboardContent() {
 
     if (isSuccess) {
       startRealtimeProgress();
-      router.replace("/dashboard");
+      // URL'i temizle
+      router.replace("/");
     } else if (isError === "email_mismatch") {
       setShowMismatchModal(true);
-      router.replace("/dashboard"); 
+      router.replace("/"); 
     } else if (isError) {
       alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-      router.replace("/dashboard");
+      router.replace("/");
     } else {
       checkInitialData();
     }
@@ -115,7 +115,7 @@ function DashboardContent() {
 
   const handleConnect = () => {
     if (!session?.user?.email) return;
-    window.location.href = `${API_URL}/auth/login?userId=${session.user.email}`;
+    window.location.href = `http://localhost:8080/api/auth/login?userId=${session.user.email}`;
   };
 
   const startRealtimeProgress = () => {
@@ -160,7 +160,7 @@ function DashboardContent() {
     }
   };
 
-  // --- RENDER 1: WIDGET GRID (Genel Bakış) ---
+  // --- RENDER 1: WIDGET GRID ---
   const renderOverview = () => (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
@@ -168,7 +168,6 @@ function DashboardContent() {
       transition={{ duration: 0.3 }}
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
     >
-          {/* Widget 1: Travel */}
           <div onClick={() => handleWidgetClick('TRAVEL')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-blue-100 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -180,7 +179,6 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.travel_count || 0} Trips Found</p>
           </div>
 
-          {/* Widget 2: Finance */}
           <div onClick={() => handleWidgetClick('FINANCE')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-green-100 text-green-600 rounded-xl group-hover:bg-green-600 group-hover:text-white transition-colors">
@@ -192,7 +190,6 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">₺{(stats?.finance_total || 0).toLocaleString()}</p>
           </div>
 
-          {/* Widget 3: Shopping */}
           <div onClick={() => handleWidgetClick('SHOPPING')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-orange-100 text-orange-600 rounded-xl group-hover:bg-orange-600 group-hover:text-white transition-colors">
@@ -204,7 +201,6 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.shopping_count || 0} Orders</p>
           </div>
 
-          {/* Widget 4: Events */}
           <div onClick={() => handleWidgetClick('EVENT')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-purple-100 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
@@ -216,7 +212,6 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.events_count || 0} Upcoming</p>
           </div>
 
-          {/* Widget 5: Subscriptions */}
           <div onClick={() => handleWidgetClick('SUBSCRIPTION')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-red-100 text-red-600 rounded-xl group-hover:bg-red-600 group-hover:text-white transition-colors">
@@ -233,7 +228,7 @@ function DashboardContent() {
     </motion.div>
   );
 
-  // --- RENDER 2: DETAY SAYFASI (Popup yerine Sayfa) ---
+  // --- RENDER 2: DETAY SAYFASI ---
   const renderDetailView = (category: string) => {
     const theme = getCategoryTheme(category);
     const categoryItems = items.filter(i => i.category === category);
@@ -245,7 +240,6 @@ function DashboardContent() {
         transition={{ duration: 0.3 }}
         className="space-y-6"
       >
-        {/* Detail Header */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                 <button 
@@ -275,7 +269,6 @@ function DashboardContent() {
             </div>
         </div>
 
-        {/* Detail Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
                 {categoryItems.length > 0 ? (
@@ -339,37 +332,10 @@ function DashboardContent() {
 
   return (
     <div className="pb-32">
-      <AnimatePresence>
-        {showOnboarding && !isProcessing && items.length === 0 && (
-          <OnboardingModal onComplete={handleConnect} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showMismatchModal && (
-          <motion.div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-             <div className="bg-white p-8 rounded-2xl relative max-w-md w-full text-center">
-                <button onClick={() => setShowMismatchModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    <X size={20} />
-                </button>
-                <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Crown size={32} />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Account Mismatch</h3>
-                <p className="text-gray-500 mb-6">Please login with the same Google account.</p>
-                <button onClick={() => { setShowMismatchModal(false); handleConnect(); }} className="bg-gray-900 text-white px-6 py-3 rounded-xl w-full font-semibold">
-                    Try Again
-                </button>
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* HEADER */}
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
             {selectedCategory ? (
-                // Eğer Kategori seçiliyse Header değişmez ama breadcrumb hissi verebiliriz
                  <h1 className="text-3xl font-bold text-gray-800">
                    {getCategoryTheme(selectedCategory).label}
                 </h1>
@@ -389,7 +355,7 @@ function DashboardContent() {
         )}
       </header>
 
-      {/* --- ANA MANTIK: KATEGORİ VARSA DETAYI GÖSTER, YOKSA GENEL BAKIŞI GÖSTER --- */}
+      {/* BODY CONTENT */}
       {selectedCategory ? renderDetailView(selectedCategory) : renderOverview()}
 
       {/* PROGRESS BAR */}

@@ -1,11 +1,19 @@
+import { Button } from "@repo/ui/components/ui/button"; // Ortak bileşeni çekiyoruz
+
 export function Header() {
+  const handleLogin = () => {
+    // Backend Login kapısına yönlendiriyoruz
+    window.location.href = "http://localhost:8080/api/auth/login";
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className="mx-auto px-8 md:px-16 lg:px-24 xl:px-48">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="text-2xl font-bold text-[#0c1844]">VOYAGER</div>
+            {/* VOYAGER yerine OLRIC yaptık */}
+            <div className="text-2xl font-bold text-[#0c1844]">OLRIC</div>
           </div>
 
           {/* Navigation */}
@@ -37,9 +45,14 @@ export function Header() {
               <span className="text-gray-300">|</span>
               <span className="text-gray-400">TR</span>
             </div>
-            <button className="bg-[#0c1844] hover:bg-[#1e3a8a] text-white px-6 py-2.5 rounded-full transition-colors shadow-sm">
+            
+            {/* Shared UI Button Kullanımı */}
+            <Button 
+              onClick={handleLogin}
+              className="bg-[#0c1844] hover:bg-[#1e3a8a] text-white px-6 py-2.5 rounded-full transition-colors shadow-sm h-auto font-normal"
+            >
               Start for free
-            </button>
+            </Button>
           </div>
         </div>
       </div>

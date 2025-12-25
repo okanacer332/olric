@@ -1,23 +1,29 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-export default withAuth({
-  pages: {
-    signIn: "/auth/signin", // NextAuth'un default sayfası yerine bunu kullanabiliriz
+export default withAuth(
+  function middleware(req) {
+    return NextResponse.next();
   },
-  callbacks: {
-    authorized({ req, token }) {
-      // Eğer token yoksa (login değilse)
-      if (!token) {
-        return false; 
-      }
-      return true;
-    },
-  },
-});
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // 1. Zaten giriş yapılmışsa İZİN VER
+        if (token) return true;
 
-// Middleware tetiklendiğinde ama yetki yoksa ne olacağını burası yönetir:
-// NextAuth konfigürasyonundan bağımsız, "unauthorized" durumunu manuel yönetelim
+        // 2. URL'de 'user' parametresi varsa İZİN VER (Backend'den yeni gelmiş)
+        if (req.nextUrl.searchParams.has("user")) return true;
+
+        // 3. Yetkisiz ise REDDET
+        return false;
+      },
+    },
+    pages: {
+      signIn: "http://localhost:3000", 
+    },
+  }
+);
+
 export const config = { 
-  matcher: ["/dashboard/:path*"] 
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"] 
 };
