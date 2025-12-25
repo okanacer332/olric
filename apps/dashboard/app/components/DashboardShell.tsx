@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { PremiumModal } from "./PremiumModal";
+import { SyncButton } from "./SyncButton";
 import { isPremiumCategory, Category } from "../lib/types";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -315,18 +316,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Sync Button */}
-            <button
-              onClick={() => {
-                if (typeof (window as any).__triggerSync === 'function') {
-                  (window as any).__triggerSync();
-                }
-              }}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-            >
-              <RefreshCw size={16} />
-              <span>{t('sync.button')}</span>
-            </button>
+            {/* Sync Button with Provider Selection */}
+            <SyncButton connectedProviders={['GMAIL', 'OUTLOOK']} />
 
             {/* Language Switcher */}
             <LanguageSwitcher />
