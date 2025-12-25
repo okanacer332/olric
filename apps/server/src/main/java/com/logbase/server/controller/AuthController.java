@@ -1,6 +1,7 @@
 package com.logbase.server.controller;
 
 import com.logbase.server.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,17 +19,37 @@ public class AuthController {
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
 
-    @Value("${google.redirect.uri}")
-    private String googleRedirectUri;
-
     // YENİ: Dashboard URL'ini çekiyoruz
     @Value("${app.dashboard.url}")
     private String dashboardUrl;
+
+    /**
+     * Dynamically builds the Google OAuth callback URI based on the incoming request.
+     * - Production (api.okanacer.xyz) → https://api.okanacer.xyz/api/auth/callback/google
+     * - Development (localhost) → http://localhost:8080/api/auth/callback/google
+     */
+    private String buildCallbackUri(HttpServletRequest request) {
+        String serverName = request.getServerName();
+        
+        // Production domain detection
+        if (serverName.equals("api.okanacer.xyz") || serverName.endsWith(".okanacer.xyz")) {
+            return "https://api.okanacer.xyz/api/auth/callback/google";
+        }
+        
+        // Development fallback
+        int serverPort = request.getServerPort();
+        String scheme = request.getScheme();
+        if (serverPort == 80 || serverPort == 443) {
+            return scheme + "://" + serverName + "/api/auth/callback/google";
+        }
+        return scheme + "://" + serverName + ":" + serverPort + "/api/auth/callback/google";
+    }
 
     @GetMapping("/login/{provider}")
     public void initiateLogin(
             @PathVariable String provider,
             @RequestParam(required = false) String redirectUrl,
+            HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
         if ("google".equalsIgnoreCase(provider)) {
@@ -38,9 +59,12 @@ public class AuthController {
             // URL encode the state parameter to handle special characters
             String encodedState = java.net.URLEncoder.encode(stateParam, java.nio.charset.StandardCharsets.UTF_8);
             
+            // Dynamically build callback URI based on request origin
+            String callbackUri = buildCallbackUri(request);
+            
             String url = "https://accounts.google.com/o/oauth2/v2/auth" +
                     "?client_id=" + googleClientId +
-                    "&redirect_uri=" + googleRedirectUri +
+                    "&redirect_uri=" + java.net.URLEncoder.encode(callbackUri, java.nio.charset.StandardCharsets.UTF_8) +
                     "&response_type=code" +
                     "&scope=email profile https://www.googleapis.com/auth/gmail.readonly" +
                     "&access_type=offline" +
@@ -56,10 +80,13 @@ public class AuthController {
             @PathVariable String provider,
             @RequestParam String code,
             @RequestParam(required = false) String state,
+            HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
         try {
-            String token = authService.processLogin(provider, code);
+            // Build the same callback URI that was used in the initial OAuth request
+            String callbackUri = buildCallbackUri(request);
+            String token = authService.processLogin(provider, code, callbackUri);
 
             // Use the state parameter to determine redirect URL if provided
             // Otherwise fall back to configured dashboard URL

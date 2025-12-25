@@ -8,5 +8,6 @@ public interface OAuthProvider {
     AuthProvider getProviderName();
 
     // Kod'u ver, Kullanıcıyı ve Tokenları al
-    ExternalUserHelper authenticate(String code);
+    // redirectUri: The callback URI used in the initial OAuth request (must match for token exchange)
+    ExternalUserHelper authenticate(String code, String redirectUri);
 }

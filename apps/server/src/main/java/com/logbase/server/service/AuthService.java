@@ -34,7 +34,7 @@ public class AuthService {
     }
 
     @Transactional
-    public String processLogin(String providerName, String code) {
+    public String processLogin(String providerName, String code, String callbackUri) {
         AuthProvider providerType;
         try {
             providerType = AuthProvider.valueOf(providerName.toUpperCase());
@@ -48,7 +48,7 @@ public class AuthService {
             throw new IllegalArgumentException("Sağlayıcı bulunamadı: " + providerName);
         }
 
-        ExternalUserHelper externalUser = provider.authenticate(code);
+        ExternalUserHelper externalUser = provider.authenticate(code, callbackUri);
 
         User user = userRepository.findByEmail(externalUser.getEmail())
                 .orElseGet(() -> createNewUser(externalUser));

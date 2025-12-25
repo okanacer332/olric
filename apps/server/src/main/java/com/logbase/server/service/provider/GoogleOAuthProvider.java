@@ -22,10 +22,6 @@ public class GoogleOAuthProvider implements OAuthProvider {
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String clientSecret;
 
-    // Redirect URI from configuration - supports both dev and production
-    @Value("${google.redirect.uri}")
-    private String redirectUri;
-
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -35,7 +31,7 @@ public class GoogleOAuthProvider implements OAuthProvider {
     }
 
     @Override
-    public ExternalUserHelper authenticate(String code) {
+    public ExternalUserHelper authenticate(String code, String redirectUri) {
         // 1. Adım: Code -> Token değişimi
         String tokenEndpoint = "https://oauth2.googleapis.com/token";
 
