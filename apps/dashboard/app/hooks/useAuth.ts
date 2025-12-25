@@ -84,8 +84,8 @@ export function useAuth(): AuthContext {
             setAuthCookie(urlToken);
             tokenToUse = urlToken;
             setIsFreshLogin(true);  // Signal that sync should start
-            // Clean URL after extracting token
-            router.replace('/');
+            // Clean URL after extracting token - stay on /dashboard
+            router.replace('/dashboard');
         }
         // Scenario B: Existing token in localStorage
         else if (localToken) {

@@ -26,15 +26,23 @@ public class AuthController {
     private String dashboardUrl;
 
     @GetMapping("/login/{provider}")
-    public void initiateLogin(@PathVariable String provider, HttpServletResponse response) throws IOException {
+    public void initiateLogin(
+            @PathVariable String provider,
+            @RequestParam(required = false) String redirectUrl,
+            HttpServletResponse response
+    ) throws IOException {
         if ("google".equalsIgnoreCase(provider)) {
+            // Use provided redirectUrl or fall back to configured dashboardUrl
+            String stateParam = (redirectUrl != null && !redirectUrl.isEmpty()) ? redirectUrl : dashboardUrl;
+            
             String url = "https://accounts.google.com/o/oauth2/v2/auth" +
                     "?client_id=" + googleClientId +
                     "&redirect_uri=" + googleRedirectUri +
                     "&response_type=code" +
                     "&scope=email profile https://www.googleapis.com/auth/gmail.readonly" +
                     "&access_type=offline" +
-                    "&prompt=consent";
+                    "&prompt=consent" +
+                    "&state=" + stateParam;
 
             response.sendRedirect(url);
         }
@@ -44,19 +52,29 @@ public class AuthController {
     public void handleCallback(
             @PathVariable String provider,
             @RequestParam String code,
+            @RequestParam(required = false) String state,
             HttpServletResponse response
     ) throws IOException {
         try {
             String token = authService.processLogin(provider, code);
 
-            // DÜZELTME: Artık localhost:3000'e değil, Dashboard URL'ine (3001) gönderiyoruz!
-            response.sendRedirect(dashboardUrl + "?success=true&user=" + token);
+            // Use the state parameter to determine redirect URL if provided
+            // Otherwise fall back to configured dashboard URL
+            String redirectUrl;
+            if (state != null && !state.isEmpty()) {
+                redirectUrl = state;
+            } else {
+                redirectUrl = dashboardUrl;
+            }
+
+            // Always redirect to /dashboard path with auth params
+            response.sendRedirect(redirectUrl + "/dashboard?success=true&user=" + token);
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Hata olursa yine Dashboard'un login sayfasına veya Landing'e atabilirsin
-            // Şimdilik Dashboard'a hata koduyla atalım
-            response.sendRedirect(dashboardUrl + "?error=auth_failed");
+            // On error, redirect to dashboard with error parameter
+            String redirectUrl = (state != null && !state.isEmpty()) ? state : dashboardUrl;
+            response.sendRedirect(redirectUrl + "/dashboard?error=auth_failed");
         }
     }
 }

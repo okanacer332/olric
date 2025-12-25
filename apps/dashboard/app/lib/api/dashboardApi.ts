@@ -61,9 +61,10 @@ export const dashboardApi = {
     },
 
     /**
-     * Get the Google OAuth login URL
+     * Get the Google OAuth login URL with current origin for proper redirect
      */
-    getLoginUrl(): string {
-        return `${API_URL}/auth/login/google`;
+    getLoginUrl(redirectUrl?: string): string {
+        const url = redirectUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+        return `${API_URL}/auth/login/google${url ? `?redirectUrl=${encodeURIComponent(url)}` : ''}`;
     }
 };
