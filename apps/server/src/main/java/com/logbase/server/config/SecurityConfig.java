@@ -51,8 +51,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Hem Landing Page (3000) hem Dashboard (3001) erişebilsin
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
+        // Hem Landing Page hem Dashboard erişebilsin (local + production)
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:3000", 
+            "http://localhost:3001",
+            "https://okanacer.xyz",
+            "https://www.okanacer.xyz"
+        ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control"));
