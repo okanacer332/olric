@@ -40,7 +40,7 @@ export const dashboardApi = {
     async getSyncStatus(userId: string, token?: string): Promise<SyncStatus> {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const response = await axios.get<SyncStatus>(
-            `${API_URL}/sync/status?userId=${userId}`,
+            `${API_URL}/api/sync/status?userId=${userId}`,
             { headers }
         );
         return response.data;
