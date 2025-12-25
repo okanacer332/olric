@@ -225,7 +225,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             {/* Sync Button */}
             <button
-              onClick={() => window.location.href = 'http://localhost:8080/api/auth/login/google'}
+              onClick={() => {
+                // Trigger sync via global function exposed by page.tsx
+                if (typeof (window as any).__triggerSync === 'function') {
+                  (window as any).__triggerSync();
+                }
+              }}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
             >
               <RefreshCw size={16} />

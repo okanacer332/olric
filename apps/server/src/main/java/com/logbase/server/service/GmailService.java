@@ -46,8 +46,8 @@ public class GmailService {
         // Asenkron başlat (Fire and Forget - Şimdilik)
         CompletableFuture.runAsync(() -> {
             try {
-                // 1. Kullanıcıyı Bul
-                User user = userRepository.findById(userId)
+                // 1. Kullanıcıyı Bul (userId aslında email)
+                User user = userRepository.findByEmail(userId)
                         .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
                 // 2. Google Token'ını Çek

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -10,12 +10,17 @@ import { useDashboardData } from "./hooks/useDashboardData";
 import { useSyncStatus } from "./hooks/useSyncStatus";
 import { getCategoryTheme } from "./lib/categoryTheme";
 import { Category } from "./lib/types";
+import { dashboardApi } from "./lib/api/dashboardApi";
 
 // UI components
 import { LandingPage } from "./components/LandingPage";
 import { CategoryOverview } from "./components/CategoryOverview";
 import { CategoryDetailView } from "./components/CategoryDetailView";
 import { SyncProgress } from "./components/SyncProgress";
+import { PremiumModal } from "./components/PremiumModal";
+
+// Custom event name for sync trigger
+const SYNC_TRIGGER_EVENT = "dashboard:trigger-sync";
 
 /**
  * Dashboard content component using modular black box architecture.
@@ -24,14 +29,48 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get("category") as Category | null;
 
+  // State for premium modal
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
   // Black box modules - clean interfaces, hidden implementations
   const { user, token, isLoading: authLoading, login } = useAuth();
   const { items, stats, refetch } = useDashboardData(user?.email || null, token);
-  const { syncStatus, isPolling } = useSyncStatus(
+  const { syncStatus, isPolling, startPolling } = useSyncStatus(
     user?.email || null,
     token,
     refetch
   );
+
+  // Handle sync trigger from DashboardShell
+  const handleSyncTrigger = useCallback(async () => {
+    if (!user?.email || !token) return;
+
+    try {
+      // Call the API to start sync
+      await dashboardApi.startSync(user.email, token);
+      // Start polling for status
+      startPolling();
+    } catch (error) {
+      console.error("Failed to start sync:", error);
+    }
+  }, [user?.email, token, startPolling]);
+
+  // Listen for sync trigger events from DashboardShell
+  useEffect(() => {
+    const handler = () => handleSyncTrigger();
+    window.addEventListener(SYNC_TRIGGER_EVENT, handler);
+    return () => window.removeEventListener(SYNC_TRIGGER_EVENT, handler);
+  }, [handleSyncTrigger]);
+
+  // Expose the trigger function globally for DashboardShell
+  useEffect(() => {
+    (window as any).__triggerSync = () => {
+      window.dispatchEvent(new CustomEvent(SYNC_TRIGGER_EVENT));
+    };
+    return () => {
+      delete (window as any).__triggerSync;
+    };
+  }, []);
 
   // Auth loading state
   if (authLoading) {
@@ -80,6 +119,12 @@ function DashboardContent() {
 
       {/* Sync progress bar */}
       <SyncProgress syncStatus={syncStatus} isVisible={isPolling} />
+
+      {/* Premium Modal */}
+      <PremiumModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
     </div>
   );
 }

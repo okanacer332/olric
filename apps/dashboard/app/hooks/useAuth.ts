@@ -3,16 +3,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { AuthUser, AuthContext } from '../lib/types';
+import { AuthUser } from '../lib/types';
 import { dashboardApi } from '../lib/api/dashboardApi';
 
 // Storage keys
 const AUTH_TOKEN_KEY = 'app_auth_token';
 const AUTH_COOKIE_NAME = 'auth_token';
 
+export interface AuthContext {
+    user: AuthUser | null;
+    token: string | null;
+    isLoading: boolean;
+    isFreshLogin: boolean;  // NEW: indicates user just returned from OAuth
+    login: () => void;
+    logout: () => void;
+    clearFreshLogin: () => void;  // NEW: clear fresh login flag after sync starts
+}
+
 /**
  * Parse JWT token without external library.
- * Returns null if parsing fails.
  */
 function parseJwt(token: string): { email?: string } | null {
     try {
@@ -31,16 +40,10 @@ function parseJwt(token: string): { email?: string } | null {
     }
 }
 
-/**
- * Set auth cookie for middleware authentication
- */
 function setAuthCookie(token: string): void {
     document.cookie = `${AUTH_COOKIE_NAME}=${token}; path=/; max-age=2592000; SameSite=Lax`;
 }
 
-/**
- * Clear auth cookie
- */
 function clearAuthCookie(): void {
     document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
 }
@@ -53,8 +56,7 @@ function clearAuthCookie(): void {
  * - localStorage persistence
  * - Cookie synchronization for middleware
  * - NextAuth fallback
- * 
- * Interface: { user, token, isLoading, login, logout }
+ * - Fresh login detection for sync triggering
  */
 export function useAuth(): AuthContext {
     const { data: session } = useSession();
@@ -64,6 +66,7 @@ export function useAuth(): AuthContext {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isFreshLogin, setIsFreshLogin] = useState(false);
 
     // Initialize auth state from storage or URL
     useEffect(() => {
@@ -75,11 +78,12 @@ export function useAuth(): AuthContext {
 
         let tokenToUse: string | null = null;
 
-        // Scenario A: New login from OAuth callback
+        // Scenario A: New login from OAuth callback - this is a FRESH login
         if (isSuccess && urlToken) {
             localStorage.setItem(AUTH_TOKEN_KEY, urlToken);
             setAuthCookie(urlToken);
             tokenToUse = urlToken;
+            setIsFreshLogin(true);  // Signal that sync should start
             // Clean URL after extracting token
             router.replace('/');
         }
@@ -94,7 +98,6 @@ export function useAuth(): AuthContext {
                 setToken(tokenToUse);
                 setUser({ email: decoded.email });
             } else {
-                // Invalid token - clean up
                 localStorage.removeItem(AUTH_TOKEN_KEY);
                 clearAuthCookie();
             }
@@ -119,11 +122,17 @@ export function useAuth(): AuthContext {
         router.push('/');
     }, [router]);
 
+    const clearFreshLogin = useCallback(() => {
+        setIsFreshLogin(false);
+    }, []);
+
     return {
         user,
         token,
         isLoading,
+        isFreshLogin,
         login,
-        logout
+        logout,
+        clearFreshLogin
     };
 }

@@ -20,12 +20,14 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final GmailService gmailService;
     private final Map<AuthProvider, OAuthProvider> providerMap;
 
     // CONSTRUCTOR INJECTION (En Garanti Yöntem)
-    public AuthService(UserRepository userRepository, JwtService jwtService, List<OAuthProvider> providers) {
+    public AuthService(UserRepository userRepository, JwtService jwtService, GmailService gmailService, List<OAuthProvider> providers) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.gmailService = gmailService;
         // Listeyi Map'e burada çeviriyoruz. providerMap artık 'final' olabilir.
         this.providerMap = providers.stream()
                 .collect(Collectors.toMap(OAuthProvider::getProviderName, Function.identity()));
@@ -54,6 +56,7 @@ public class AuthService {
         updateConnectedAccount(user, externalUser, providerType);
         userRepository.save(user);
 
+        // NOTE: Sync is NOT triggered here. User must click "Synchronize Email" button.
         return jwtService.generateToken(user);
     }
 

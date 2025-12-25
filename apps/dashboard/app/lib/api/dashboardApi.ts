@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { SmartItem, DashboardStats, SyncStatus } from '../types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// API_URL already includes /api suffix from .env.local (http://localhost:8080/api)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 /**
  * Dashboard API client - black box abstraction over HTTP calls.
  * Implementation details (axios, base URL, headers) are hidden.
  * 
- * To replace: implement the same interface with different HTTP client.
+ * Note: API_URL already includes /api prefix, so paths are relative to that.
  */
 export const dashboardApi = {
     /**
@@ -40,16 +41,29 @@ export const dashboardApi = {
     async getSyncStatus(userId: string, token?: string): Promise<SyncStatus> {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const response = await axios.get<SyncStatus>(
-            `${API_URL}/api/sync/status?userId=${userId}`,
+            `${API_URL}/sync/status?userId=${userId}`,
             { headers }
         );
         return response.data;
     },
 
     /**
+     * Start email synchronization for a user.
+     * Called when user clicks "Synchronize Email" button.
+     */
+    async startSync(userId: string, token?: string): Promise<void> {
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        await axios.post(
+            `${API_URL}/sync/start?userId=${userId}`,
+            {},
+            { headers }
+        );
+    },
+
+    /**
      * Get the Google OAuth login URL
      */
     getLoginUrl(): string {
-        return `${API_URL}/api/auth/login/google`;
+        return `${API_URL}/auth/login/google`;
     }
 };

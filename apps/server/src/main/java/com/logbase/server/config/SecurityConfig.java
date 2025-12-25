@@ -32,8 +32,8 @@ public class SecurityConfig {
 
                 // URL Yetkilendirmeleri
                 .authorizeHttpRequests(auth -> auth
-                        // Bu endpointler herkese açık (Login işlemleri)
-                        .requestMatchers("/api/auth/**", "/error").permitAll()
+                        // Bu endpointler herkese açık (Login işlemleri ve sync durumu)
+                        .requestMatchers("/api/auth/**", "/api/sync/**", "/api/dashboard/**", "/error").permitAll()
                         // Diğer her şey için token şart!
                         .anyRequest().authenticated()
                 )
