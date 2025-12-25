@@ -20,28 +20,44 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // API olduğu için CSRF'e ihtiyacımız yok
+                // Disable CSRF for stateless API
                 .csrf(csrf -> csrf.disable())
 
-                // CORS Ayarları (Frontend'e izin ver)
+                // Security Headers
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'"))
+                        .frameOptions(frame -> frame.deny())
+                        .xssProtection(xss -> xss.disable()) // Modern browsers have built-in XSS protection
+                        .contentTypeOptions(contentType -> {})
+                )
+
+                // CORS Configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // URL Yetkilendirmeleri
+                // URL Authorization
                 .authorizeHttpRequests(auth -> auth
-                        // Bu endpointler herkese açık (Login işlemleri ve sync durumu)
-                        .requestMatchers("/api/auth/**", "/api/sync/**", "/api/dashboard/**", "/error").permitAll()
-                        // Diğer her şey için token şart!
+                        // Public endpoints
+                        .requestMatchers(
+                                "/api/auth/**", 
+                                "/api/sync/**", 
+                                "/api/dashboard/**", 
+                                "/api/health/**",
+                                "/error"
+                        ).permitAll()
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
 
-                // Stateless Session (Sunucu RAM'inde session tutma)
+                // Stateless session management
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Filtremizi devreye al
+                // Add filters
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
