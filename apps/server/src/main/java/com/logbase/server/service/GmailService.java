@@ -1,16 +1,23 @@
 package com.logbase.server.service;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.gmail.Gmail;
-import com.google.api.services.gmail.model.*;
+import com.google.api.services.gmail.model.ListMessagesResponse;
+import com.google.api.services.gmail.model.Message;
+import com.google.api.services.gmail.model.MessagePart;
+import com.google.api.services.gmail.model.MessagePartHeader;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.logbase.server.model.AuthProvider;
+import com.logbase.server.model.ConnectedAccount;
 import com.logbase.server.model.SmartItem;
+import com.logbase.server.model.User;
 import com.logbase.server.repository.SmartItemRepository;
-import org.springframework.beans.factory.annotation.Value;
+import com.logbase.server.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -19,95 +26,43 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class GmailService {
 
     private static final String APPLICATION_NAME = "LogBase-Server";
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-    private static final List<String> SCOPES = Collections.singletonList("https://www.googleapis.com/auth/gmail.readonly");
 
     private final GeminiService geminiService;
     private final SmartItemRepository smartItemRepository;
     private final SyncManager syncManager;
-    private GoogleAuthorizationCodeFlow flow;
-
-    @Value("${google.client.id}")
-    private String clientId;
-
-    @Value("${google.client.secret}")
-    private String clientSecret;
-
-    @Value("${google.redirect.uri}")
-    private String redirectUri;
-
-    public GmailService(GeminiService geminiService, SmartItemRepository smartItemRepository, SyncManager syncManager) {
-        this.geminiService = geminiService;
-        this.smartItemRepository = smartItemRepository;
-        this.syncManager = syncManager;
-    }
-
-    // --- OAUTH AKIŞI BAŞLANGICI ---
-
-    private GoogleAuthorizationCodeFlow getFlow() throws IOException, GeneralSecurityException {
-        if (flow == null) {
-            GoogleClientSecrets.Details web = new GoogleClientSecrets.Details();
-            web.setClientId(clientId);
-            web.setClientSecret(clientSecret);
-            GoogleClientSecrets secrets = new GoogleClientSecrets().setWeb(web);
-
-            flow = new GoogleAuthorizationCodeFlow.Builder(
-                    GoogleNetHttpTransport.newTrustedTransport(),
-                    JSON_FACTORY,
-                    secrets,
-                    SCOPES)
-                    .setAccessType("offline")
-                    .build();
-        }
-        return flow;
-    }
-
-    public String getAuthorizationUrl() throws IOException, GeneralSecurityException {
-        return getFlow().newAuthorizationUrl()
-                .setRedirectUri(redirectUri)
-                .setState("auth_init") // State artık userId taşımıyor
-                .build();
-    }
+    private final UserRepository userRepository; // EKLENDİ: Token'ı buradan çekeceğiz
 
     /**
-     * Google'dan gelen kodu işler, maili bulur ve sync başlatır.
+     * DIŞ DÜNYADAN ÇAĞRILAN TEK METOD.
+     * Artık sadece userId alıyor. Token'ı kendisi buluyor.
      */
-    public String handleGoogleCallbackAndSync(String code) throws IOException, GeneralSecurityException {
-        // 1. Token Al
-        GoogleTokenResponse response = getFlow().newTokenRequest(code)
-                .setRedirectUri(redirectUri)
-                .execute();
-
-        String accessToken = response.getAccessToken();
-
-        // 2. Kullanıcının Mail Adresini Öğren (Profil Sorgusu)
-        Gmail service = new Gmail.Builder(
-                GoogleNetHttpTransport.newTrustedTransport(),
-                JSON_FACTORY,
-                request -> request.getHeaders().setAuthorization("Bearer " + accessToken))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-
-        Profile profile = service.users().getProfile("me").execute();
-        String realEmail = profile.getEmailAddress();
-
-        // 3. Arka Planda Senkronizasyonu Başlat (Deep Scan)
-        syncUserEmails(accessToken, realEmail);
-
-        return realEmail;
-    }
-
-    // --- DEEP SCAN SYNC MANTIĞI (Senin Gönderdiğin Kod) ---
-
-    public void syncUserEmails(String accessToken, String userId) {
+    public void syncEmails(String userId) {
+        // Asenkron başlat (Fire and Forget - Şimdilik)
         CompletableFuture.runAsync(() -> {
             try {
+                // 1. Kullanıcıyı Bul
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+                // 2. Google Token'ını Çek
+                String accessToken = getGoogleAccessToken(user);
+
+                if (accessToken == null) {
+                    syncManager.updateStatus(userId, "Google account not linked.", 0);
+                    return;
+                }
+
+                // 3. İşlemi Başlat
                 performSync(accessToken, userId);
+
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Sync başlatma hatası", e);
                 syncManager.updateStatus(userId, "Error: " + e.getMessage(), 0);
             }
         });
@@ -117,14 +72,17 @@ public class GmailService {
         try {
             syncManager.updateStatus(userId, "Connecting to Deep Scan...", 5);
 
+            // Google Credentials Oluştur (Sadece Access Token ile)
+            GoogleCredentials credentials = GoogleCredentials.create(new AccessToken(accessToken, null));
+
             Gmail service = new Gmail.Builder(
                     GoogleNetHttpTransport.newTrustedTransport(),
                     JSON_FACTORY,
-                    request -> request.getHeaders().setAuthorization("Bearer " + accessToken))
+                    new HttpCredentialsAdapter(credentials))
                     .setApplicationName(APPLICATION_NAME)
                     .build();
 
-            // KAPSAYICI SORGU
+            // KAPSAYICI SORGU (Senin Orijinal Sorgun)
             String query = "(" +
                     "subject:(flight OR ucus OR bilet OR ticket OR booking OR rezervasyon OR confirmation OR onay OR 'your trip' OR seyahat) OR " +
                     "subject:(fatura OR receipt OR invoice OR payment OR odeme OR islem OR dekont) OR " +
@@ -137,7 +95,7 @@ public class GmailService {
 
             ListMessagesResponse response = service.users().messages().list("me")
                     .setQ(query)
-                    .setMaxResults(200L)
+                    .setMaxResults(200L) // Limit 200
                     .execute();
 
             List<Message> messages = response.getMessages();
@@ -153,6 +111,7 @@ public class GmailService {
             List<Map<String, String>> allBatchData = new ArrayList<>();
             int downloadedCount = 0;
 
+            // --- EMAILLERI İNDİRME DÖNGÜSÜ ---
             for (Message msg : messages) {
                 try {
                     Message fullMsg = service.users().messages().get("me", msg.getId())
@@ -173,10 +132,12 @@ public class GmailService {
 
                     String rawBody = getEmailBody(fullMsg.getPayload());
 
+                    // Temizlik
                     String cleanBody = rawBody.replaceAll("\\<.*?\\>", " ")
                             .replaceAll("\\s+", " ")
                             .trim();
 
+                    // Çok uzun mailleri kırp (Token limiti yememek için)
                     if (cleanBody.length() > 2500) {
                         cleanBody = cleanBody.substring(0, 2500);
                     }
@@ -193,10 +154,11 @@ public class GmailService {
                     syncManager.updateStatus(userId, "Extracting email contents (" + downloadedCount + "/" + totalEmails + ")", progress);
 
                 } catch (Exception e) {
-                    System.out.println("Mail okuma hatası: " + e.getMessage());
+                    log.warn("Mail okuma hatası (Atlanıyor): {}", e.getMessage());
                 }
             }
 
+            // --- AI ANALİZ DÖNGÜSÜ (Batch Processing) ---
             int batchSize = 15;
             int totalBatches = (int) Math.ceil((double) allBatchData.size() / batchSize);
 
@@ -210,6 +172,7 @@ public class GmailService {
                 int currentProgress = 50 + (int)((double)(i + 1) / totalBatches * 45);
                 syncManager.updateStatus(userId, "AI analyzing context " + (i + 1) + "/" + totalBatches + "...", currentProgress);
 
+                // Gemini'ye sor
                 List<SmartItem> foundItems = geminiService.analyzeBatch(batch);
 
                 if (foundItems != null && !foundItems.isEmpty()) {
@@ -222,9 +185,25 @@ public class GmailService {
             syncManager.updateStatus(userId, "Deep Scan Completed!", 100);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Sync Error", e);
             syncManager.updateStatus(userId, "Critical Error: " + e.getMessage(), 0);
         }
+    }
+
+    // --- YARDIMCI METODLAR ---
+
+    /**
+     * User objesinin içindeki ConnectedAccounts listesini tarar,
+     * GOOGLE sağlayıcısını bulup AccessToken'ı döner.
+     */
+    private String getGoogleAccessToken(User user) {
+        if (user.getConnectedAccounts() == null) return null;
+
+        Optional<ConnectedAccount> googleAccount = user.getConnectedAccounts().stream()
+                .filter(acc -> acc.getProvider() == AuthProvider.GOOGLE)
+                .findFirst();
+
+        return googleAccount.map(ConnectedAccount::getAccessToken).orElse(null);
     }
 
     private String getEmailBody(MessagePart part) {

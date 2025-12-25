@@ -5,13 +5,30 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, RefreshCw, AlertCircle, ArrowRight, CheckCircle, X, Crown, 
+  Loader2, RefreshCw, AlertCircle, ArrowRight, CheckCircle, Crown, 
   Plane, Wallet, ShoppingBag, Calendar, CreditCard, ChevronLeft, Search
 } from "lucide-react";
 import axios from "axios";
-// import OnboardingModal from "@/src/components/OnboardingModal"; // Eğer bu dosya yoksa yorum satırı kalabilir
 
-// ... TİP TANIMLAMALARI (AYNI KALSIN) ...
+// --- 1. YARDIMCI FONKSİYONLAR ---
+
+// JWT Token Çözücü (Kütüphanesiz & Güvenli)
+function parseJwt(token: string) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        console.error("JWT Parse Hatası:", e);
+        return null;
+    }
+}
+
+// --- 2. TİP TANIMLAMALARI ---
+
 interface SmartItem {
   id?: string;
   category: 'TRAVEL' | 'FINANCE' | 'SHOPPING' | 'EVENT' | 'SUBSCRIPTION';
@@ -40,32 +57,110 @@ interface SyncStatus {
     progress: number;
 }
 
+// --- 3. ANA KOMPONENT ---
+
 function DashboardContent() {
-  const { data: session, status } = useSession(); 
+  const { data: session } = useSession(); 
   const searchParams = useSearchParams();
   const router = useRouter();
   
+  // --- STATE ---
   const [items, setItems] = useState<SmartItem[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showMismatchModal, setShowMismatchModal] = useState(false);
-  
-  const categoryParam = searchParams.get("category");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam);
-  
+  // UI State
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState("Initializing connection...");
+  const [statusMessage, setStatusMessage] = useState("Initializing...");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+  // Auth State
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  // Kategori Seçimi
+  const categoryParam = searchParams.get("category");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   useEffect(() => {
     setSelectedCategory(categoryParam);
   }, [categoryParam]);
 
+  // --- 4. AUTH & LOGIN LOGIC (LocalStorage Tabanlı) ---
+  useEffect(() => {
+    // Sadece client tarafında çalış
+    if (typeof window === "undefined") return;
+
+    const urlToken = searchParams.get("user");
+    const localToken = localStorage.getItem("app_auth_token");
+    const isSuccess = searchParams.get("success") === "true";
+
+    let tokenToUse = null;
+
+    // Senaryo A: Yeni giriş (URL'de token var)
+    if (isSuccess && urlToken) {
+      localStorage.setItem("app_auth_token", urlToken);
+      tokenToUse = urlToken;
+    } 
+    // Senaryo B: Eski giriş (LocalStorage'da token var)
+    else if (localToken) {
+      tokenToUse = localToken;
+    }
+
+    if (tokenToUse) {
+      const decoded = parseJwt(tokenToUse);
+      if (decoded && decoded.email) {
+        setAuthToken(tokenToUse);
+        setCurrentUserEmail(decoded.email);
+
+        // Yeni giriş ise Sync başlat, değilse veriyi çek
+        if (isSuccess && urlToken) {
+           startRealtimeProgress(decoded.email, tokenToUse);
+        } else {
+           checkInitialData(decoded.email, tokenToUse);
+        }
+      } else {
+        // Token bozuksa temizle
+        localStorage.removeItem("app_auth_token");
+        setAuthToken(null);
+        setCurrentUserEmail(null);
+      }
+    } 
+    // Senaryo C: NextAuth Fallback (Opsiyonel)
+    else if (session?.user?.email) {
+      setCurrentUserEmail(session.user.email);
+      checkInitialData(session.user.email, "");
+    }
+
+  }, [searchParams, session]);
+
+  // --- 5. DATA FETCHING ---
+  const checkInitialData = async (email: string, token: string) => {
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      // İstatistikleri Çek
+      const statsRes = await axios.get(`${API_URL}/dashboard/stats?userId=${email}`, { headers });
+      setStats(statsRes.data);
+
+      // İtemleri Çek
+      const itemsRes = await axios.get(`${API_URL}/dashboard/items?userId=${email}`, { headers });
+      if (itemsRes.data && itemsRes.data.length > 0) {
+        setItems(itemsRes.data);
+      }
+    } catch (e) {
+      console.error("Veri çekme hatası:", e);
+    }
+  };
+
+  // --- 6. ACTIONS ---
+  const handleConnect = () => {
+    // Backend Login'e Yönlendir
+    window.location.href = `${API_URL}/api/auth/login/google`;
+  };
+
   const handleBackToOverview = () => {
-    // BasePath kullandığımız için sadece "/" yeterli
     router.push("/");
   };
 
@@ -73,62 +168,15 @@ function DashboardContent() {
     router.push(`/?category=${cat}`);
   };
 
-  useEffect(() => {
-    if (status === "loading") return;
-
-    const isSuccess = searchParams.get("success");
-    const isError = searchParams.get("error");
-
-    if (isSuccess) {
-      startRealtimeProgress();
-      // URL'i temizle
-      router.replace("/");
-    } else if (isError === "email_mismatch") {
-      setShowMismatchModal(true);
-      router.replace("/"); 
-    } else if (isError) {
-      alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-      router.replace("/");
-    } else {
-      checkInitialData();
-    }
-  }, [session, status]); 
-
-  const checkInitialData = async () => {
-    if (!session?.user?.email) return;
-
-    try {
-      const statsRes = await axios.get(`${API_URL}/dashboard/stats?userId=${session.user.email}`);
-      setStats(statsRes.data);
-
-      const itemsRes = await axios.get(`${API_URL}/dashboard/items?userId=${session.user.email}`);
-      if (itemsRes.data && itemsRes.data.length > 0) {
-        setItems(itemsRes.data);
-      } else {
-        if (!isProcessing) setShowOnboarding(true);
-      }
-    } catch (e) {
-      console.error("Veri çekme hatası:", e);
-      if (!isProcessing && items.length === 0) setShowOnboarding(true);
-    }
-  };
-
-  const handleConnect = () => {
-    if (!session?.user?.email) return;
-    window.location.href = `http://localhost:8080/api/auth/login?userId=${session.user.email}`;
-  };
-
-  const startRealtimeProgress = () => {
-    if (!session?.user?.email) return;
+  const startRealtimeProgress = (email: string, token: string) => {
     setIsProcessing(true);
     setProgress(5);
     setStatusMessage("Connecting to Gmail...");
 
     const pollInterval = setInterval(async () => {
       try {
-        const userId = session.user?.email;
-        if (!userId) return;
-        const res = await axios.get(`${API_URL}/sync/status?userId=${userId}`);
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get(`${API_URL}/sync/status?userId=${email}`, { headers });
         const currentStatus: SyncStatus = res.data;
 
         if (currentStatus) {
@@ -139,8 +187,9 @@ function DashboardContent() {
             clearInterval(pollInterval);
             setTimeout(() => {
                 setIsProcessing(false);
-                checkInitialData(); 
-            }, 1000);
+                checkInitialData(email, token);
+                router.replace("/"); // URL temizle
+            }, 1500);
           }
         }
       } catch (e) {
@@ -149,6 +198,7 @@ function DashboardContent() {
     }, 1000); 
   };
 
+  // --- 7. THEMES & UI ---
   const getCategoryTheme = (cat: string) => {
     switch (cat) {
       case 'TRAVEL': return { icon: <Plane className="w-6 h-6"/>, color: 'text-blue-600', bg: 'bg-blue-100', label: 'Travel Organizer', desc: 'Flights, Hotels & Trips' };
@@ -160,7 +210,9 @@ function DashboardContent() {
     }
   };
 
-  // --- RENDER 1: WIDGET GRID ---
+  // --- 8. RENDER BİLEŞENLERİ ---
+
+  // A. KARTLAR (OVERVIEW)
   const renderOverview = () => (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
@@ -168,6 +220,7 @@ function DashboardContent() {
       transition={{ duration: 0.3 }}
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
     >
+          {/* Travel */}
           <div onClick={() => handleWidgetClick('TRAVEL')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-blue-100 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -179,6 +232,7 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.travel_count || 0} Trips Found</p>
           </div>
 
+          {/* Finance */}
           <div onClick={() => handleWidgetClick('FINANCE')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-green-100 text-green-600 rounded-xl group-hover:bg-green-600 group-hover:text-white transition-colors">
@@ -190,6 +244,7 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">₺{(stats?.finance_total || 0).toLocaleString()}</p>
           </div>
 
+          {/* Shopping */}
           <div onClick={() => handleWidgetClick('SHOPPING')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-orange-100 text-orange-600 rounded-xl group-hover:bg-orange-600 group-hover:text-white transition-colors">
@@ -201,6 +256,7 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.shopping_count || 0} Orders</p>
           </div>
 
+          {/* Events */}
           <div onClick={() => handleWidgetClick('EVENT')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-purple-100 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
@@ -212,6 +268,7 @@ function DashboardContent() {
               <p className="text-2xl font-bold text-gray-900 mt-1">{stats?.events_count || 0} Upcoming</p>
           </div>
 
+          {/* Subscriptions */}
           <div onClick={() => handleWidgetClick('SUBSCRIPTION')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-red-100 text-red-600 rounded-xl group-hover:bg-red-600 group-hover:text-white transition-colors">
@@ -228,7 +285,7 @@ function DashboardContent() {
     </motion.div>
   );
 
-  // --- RENDER 2: DETAY SAYFASI ---
+  // B. DETAY TABLOSU (LIST VIEW)
   const renderDetailView = (category: string) => {
     const theme = getCategoryTheme(category);
     const categoryItems = items.filter(i => i.category === category);
@@ -240,6 +297,7 @@ function DashboardContent() {
         transition={{ duration: 0.3 }}
         className="space-y-6"
       >
+        {/* Başlık ve Arama */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                 <button 
@@ -257,18 +315,17 @@ function DashboardContent() {
                 </div>
             </div>
             
-            <div className="flex items-center gap-2">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input 
-                        type="text" 
-                        placeholder="Search..." 
-                        className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input 
+                    type="text" 
+                    placeholder="Search..." 
+                    className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
             </div>
         </div>
 
+        {/* Tablo */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
                 {categoryItems.length > 0 ? (
@@ -330,8 +387,36 @@ function DashboardContent() {
     );
   };
 
+  // --- 9. MASTER RENDER ---
+
+  // KULLANICI YOKSA -> LANDING PAGE GÖSTER
+  if (!currentUserEmail) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 relative">
+          <div className="mb-8 p-6 bg-blue-50 rounded-full">
+             <Crown className="w-12 h-12 text-blue-600" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center text-gray-900 tracking-tight">
+            Welcome to <span className="text-blue-600">LogBase</span>
+          </h1>
+          <p className="text-gray-500 mb-12 text-center max-w-md text-lg">
+            Your AI-powered personal life assistant. Organize flights, finances, and orders automatically.
+          </p>
+          <button 
+              onClick={handleConnect}
+              className="group flex items-center gap-3 bg-gray-900 text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
+          >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" />
+              <span>Login with Google</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </button>
+      </div>
+    );
+  }
+
+  // KULLANICI VARSA -> DASHBOARD GÖSTER
   return (
-    <div className="pb-32">
+    <div className="pb-32 px-4 md:px-8 pt-8">
       {/* HEADER */}
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
@@ -341,7 +426,7 @@ function DashboardContent() {
                 </h1>
             ) : (
                 <h1 className="text-3xl font-bold text-gray-800">
-                    Hi, {session?.user?.name?.split(" ")[0]} 👋
+                    Hi, {currentUserEmail.split("@")[0]} 👋
                 </h1>
             )}
             <p className="text-gray-500 mt-1">
@@ -358,40 +443,40 @@ function DashboardContent() {
       {/* BODY CONTENT */}
       {selectedCategory ? renderDetailView(selectedCategory) : renderOverview()}
 
-      {/* PROGRESS BAR */}
+      {/* PROGRESS BAR (Sync sırasında görünür) */}
       <AnimatePresence>
         {isProcessing && (
           <motion.div 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-0 left-0 md:left-72 right-0 bg-gray-900 text-white p-4 shadow-2xl z-40 border-t border-gray-800"
+            className="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 shadow-2xl z-50 border-t border-gray-800"
           >
              <div className="max-w-4xl mx-auto flex items-center justify-between gap-6">
-              <div className="flex items-center gap-3">
-                {progress === 100 ? (
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
-                    <CheckCircle className="text-white" />
+                <div className="flex items-center gap-3">
+                   {progress === 100 ? (
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+                        <CheckCircle className="text-white" />
+                      </div>
+                   ) : (
+                      <Loader2 className="animate-spin text-blue-400 w-8 h-8" />
+                   )}
+                   <div>
+                      <h4 className="font-bold text-sm min-w-[200px]">{statusMessage}</h4>
+                      <p className="text-xs text-gray-400">{progress}% completed.</p>
+                   </div>
+                </div>
+                <div className="flex-1 max-w-md hidden md:block">
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ type: "spring", stiffness: 50 }}
+                    />
                   </div>
-                ) : (
-                  <Loader2 className="animate-spin text-blue-400 w-8 h-8" />
-                )}
-                <div>
-                  <h4 className="font-bold text-sm min-w-[200px]">{statusMessage}</h4>
-                  <p className="text-xs text-gray-400">{progress}% completed.</p>
                 </div>
-              </div>
-              <div className="flex-1 max-w-md">
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ type: "spring", stiffness: 50 }}
-                  />
-                </div>
-              </div>
-            </div>
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -401,7 +486,7 @@ function DashboardContent() {
 
 export default function Dashboard() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}>
       <DashboardContent />
     </Suspense>
   );

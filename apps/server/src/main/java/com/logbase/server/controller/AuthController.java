@@ -1,63 +1,62 @@
 package com.logbase.server.controller;
 
-import com.logbase.server.service.GmailService;
+import com.logbase.server.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    private final GmailService gmailService;
+    private final AuthService authService;
 
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
 
-    public AuthController(GmailService gmailService) {
-        this.gmailService = gmailService;
-    }
+    @Value("${google.redirect.uri}")
+    private String googleRedirectUri;
 
-    // 1. ADIM: Login (Parametresiz)
-    // Kullanıcı butona basınca direkt buraya gelir, biz de Google'a yollarız.
-    @GetMapping("/login")
-    public void login(HttpServletResponse response) {
-        try {
-            String url = gmailService.getAuthorizationUrl();
+    // YENİ: Dashboard URL'ini çekiyoruz
+    @Value("${app.dashboard.url}")
+    private String dashboardUrl;
+
+    @GetMapping("/login/{provider}")
+    public void initiateLogin(@PathVariable String provider, HttpServletResponse response) throws IOException {
+        if ("google".equalsIgnoreCase(provider)) {
+            String url = "https://accounts.google.com/o/oauth2/v2/auth" +
+                    "?client_id=" + googleClientId +
+                    "&redirect_uri=" + googleRedirectUri +
+                    "&response_type=code" +
+                    "&scope=email profile https://www.googleapis.com/auth/gmail.readonly" +
+                    "&access_type=offline" +
+                    "&prompt=consent";
+
             response.sendRedirect(url);
-        } catch (Exception e) {
-            e.printStackTrace();
-            try {
-                response.sendRedirect(frontendUrl + "?error=login_init_failed");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
         }
     }
 
-    // 2. ADIM: Google Callback
-    // Google'dan kodu alırız, maili buluruz, sync başlatırız ve Dashboard'a atarız.
-    @GetMapping("/google-success")
-    public void callback(@RequestParam("code") String code, HttpServletResponse response) {
+    @GetMapping("/callback/{provider}")
+    public void handleCallback(
+            @PathVariable String provider,
+            @RequestParam String code,
+            HttpServletResponse response
+    ) throws IOException {
         try {
-            // Service: Kodu Token'a çevir -> Profil'den Maili Bul -> Sync Başlat -> Maili Döndür
-            String email = gmailService.handleGoogleCallbackAndSync(code);
+            String token = authService.processLogin(provider, code);
 
-            System.out.println("Login Başarılı! Yönlendiriliyor: " + email);
-
-            // Dashboard'a parametre olarak maili ekleyip yolluyoruz
-            response.sendRedirect(frontendUrl + "?user=" + email + "&success=true");
+            // DÜZELTME: Artık localhost:3000'e değil, Dashboard URL'ine (3001) gönderiyoruz!
+            response.sendRedirect(dashboardUrl + "?success=true&user=" + token);
 
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                response.sendRedirect(frontendUrl + "?error=auth_failed");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            // Hata olursa yine Dashboard'un login sayfasına veya Landing'e atabilirsin
+            // Şimdilik Dashboard'a hata koduyla atalım
+            response.sendRedirect(dashboardUrl + "?error=auth_failed");
         }
     }
 }

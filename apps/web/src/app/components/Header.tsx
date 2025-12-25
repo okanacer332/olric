@@ -3,7 +3,7 @@ import { Button } from "@repo/ui/components/ui/button"; // Ortak bileşeni çeki
 export function Header() {
   const handleLogin = () => {
     // Backend Login kapısına yönlendiriyoruz
-    window.location.href = "http://localhost:8080/api/auth/login";
+    window.location.href = "http://localhost:8080/api/auth/login/google";
   };
 
   return (
