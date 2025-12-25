@@ -1,12 +1,57 @@
 import axios from 'axios';
 import { SmartItem, DashboardStats, SyncStatus } from '../types';
 
-// API_URL already includes /api suffix from .env.local (http://localhost:8080/api)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+/**
+ * Intelligent API URL detection.
+ * 
+ * Priority:
+ * 1. NEXT_PUBLIC_API_URL environment variable (if explicitly set)
+ * 2. Runtime domain detection:
+ *    - okanacer.xyz → https://api.okanacer.xyz/api
+ *    - localhost → http://localhost:8080/api
+ * 
+ * This prevents accidentally using localhost in production.
+ */
+function getApiUrl(): string {
+    // If explicitly set via environment variable, use it
+    if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    // Runtime detection based on current domain
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+
+        // Production domain
+        if (hostname === 'okanacer.xyz' || hostname.endsWith('.okanacer.xyz')) {
+            return 'https://api.okanacer.xyz/api';
+        }
+
+        // Development (localhost or 127.0.0.1)
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:8080/api';
+        }
+    }
+
+    // SSR fallback (server-side rendering, before window is available)
+    // Default to production API for safety
+    return 'https://api.okanacer.xyz/api';
+}
+
+const API_URL = getApiUrl();
+
+// Debug logging (only in development)
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    console.log('[Dashboard API] Environment detected:', {
+        hostname: window.location.hostname,
+        apiUrl: API_URL,
+        fromEnv: !!process.env.NEXT_PUBLIC_API_URL
+    });
+}
 
 /**
  * Dashboard API client - black box abstraction over HTTP calls.
- * Implementation details (axios, base URL, headers) are hidden.
+ * Automatically detects environment and uses correct API URL.
  * 
  * Note: API_URL already includes /api prefix, so paths are relative to that.
  */
