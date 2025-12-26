@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/api/auth/**", 
                                 "/api/sync/**", 
                                 "/api/dashboard/**", 
+                                "/api/user/**",
                                 "/api/health/**",
                                 "/error"
                         ).permitAll()
