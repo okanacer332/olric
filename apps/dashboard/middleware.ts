@@ -33,7 +33,7 @@ export function middleware(req: NextRequest) {
         },
       },
       pages: {
-        signIn: "http://localhost:3000",
+        signIn: process.env.NEXT_PUBLIC_LANDING_URL || "https://okanacer.xyz",
       },
     }
   ) as any)(req);

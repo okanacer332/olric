@@ -2,6 +2,7 @@ package com.logbase.server.controller;
 
 import com.logbase.server.model.SmartItem;
 import com.logbase.server.repository.SmartItemRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -10,7 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/dashboard") // DİKKAT: Endpoint burada başlıyor
+@RequestMapping("/api/dashboard")
 public class DashboardController {
 
     private final SmartItemRepository smartItemRepository;
@@ -19,13 +20,23 @@ public class DashboardController {
         this.smartItemRepository = smartItemRepository;
     }
 
+    /**
+     * Get all items for the authenticated user.
+     * SECURITY: userId is extracted from JWT token, not request parameter.
+     */
     @GetMapping("/items")
-    public List<SmartItem> getAllItems(@RequestParam String userId) {
+    public List<SmartItem> getAllItems(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
         return smartItemRepository.findByUserId(userId);
     }
 
+    /**
+     * Get dashboard stats for the authenticated user.
+     * SECURITY: userId is extracted from JWT token, not request parameter.
+     */
     @GetMapping("/stats")
-    public Map<String, Object> getDashboardStats(@RequestParam String userId) {
+    public Map<String, Object> getDashboardStats(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
         List<SmartItem> allItems = smartItemRepository.findByUserId(userId);
 
         Map<String, Object> response = new HashMap<>();

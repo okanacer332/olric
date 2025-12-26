@@ -12,9 +12,12 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -55,6 +58,30 @@ public class AuthController {
         return scheme + "://" + serverName + ":" + serverPort + path;
     }
 
+    /**
+     * Validates redirect URL against allowlist to prevent open redirect attacks.
+     * SECURITY: Only allows redirects to known, trusted domains.
+     */
+    private boolean isValidRedirectUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return false;
+        }
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            String host = uri.getHost();
+            if (host == null) {
+                return false;
+            }
+            // Allowlist of trusted domains
+            return host.equals("okanacer.xyz") 
+                || host.equals("www.okanacer.xyz")
+                || host.equals("localhost")
+                || host.endsWith(".okanacer.xyz");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @GetMapping("/login/{provider}")
     public void initiateLogin(
             @PathVariable String provider,
@@ -62,7 +89,13 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
-        String stateParam = (redirectUrl != null && !redirectUrl.isEmpty()) ? redirectUrl : dashboardUrl;
+        // SECURITY: Validate redirect URL against allowlist
+        String stateParam;
+        if (redirectUrl != null && !redirectUrl.isEmpty() && isValidRedirectUrl(redirectUrl)) {
+            stateParam = redirectUrl;
+        } else {
+            stateParam = dashboardUrl;
+        }
         String encodedState = URLEncoder.encode(stateParam, StandardCharsets.UTF_8);
         String callbackUri = buildCallbackUri(request, provider.toLowerCase());
 
@@ -119,7 +152,7 @@ public class AuthController {
             response.sendRedirect(redirectUrl + "/dashboard?success=true&user=" + token);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("OAuth callback error for provider " + provider, e);
             String redirectUrl = (state != null && !state.isEmpty()) 
                 ? URLDecoder.decode(state, StandardCharsets.UTF_8) 
                 : dashboardUrl;

@@ -58,7 +58,7 @@ public class GmailService {
         CompletableFuture.runAsync(() -> {
             try {
                 // 1. Find user and get Google token
-                User user = userRepository.findByEmail(userId)
+                User user = userRepository.findById(userId)
                         .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
                 String accessToken = getGoogleAccessToken(user);

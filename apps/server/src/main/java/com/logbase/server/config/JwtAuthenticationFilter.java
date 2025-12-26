@@ -8,13 +8,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList; // Rol yönetimi basitleştirildi
+import java.util.Collections;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -51,13 +53,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Token geçerli mi?
                 if (jwtService.isTokenValid(jwt)) {
 
-                    // Not: Burada veritabanından User çekmiyoruz! (Performans için)
-                    // Token geçerliyse işlem tamamdır.
+                    // SECURITY: Extract role from JWT and create proper authorities
+                    String role = jwtService.extractRole(jwt);
+                    List<SimpleGrantedAuthority> authorities = role != null 
+                        ? List.of(new SimpleGrantedAuthority(role))
+                        : Collections.emptyList();
 
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userId, // Principal olarak User ID dönüyoruz
                             null,
-                            new ArrayList<>() // İleride Authorities (Roller) buraya eklenebilir
+                            authorities // Now properly populated with role from JWT
                     );
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

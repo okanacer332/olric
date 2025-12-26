@@ -3,6 +3,7 @@ package com.logbase.server.controller;
 import com.logbase.server.service.GmailService;
 import com.logbase.server.service.SyncManager;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -20,19 +21,23 @@ public class SyncController {
     }
 
     /**
-     * Get current sync status for a user.
+     * Get current sync status for the authenticated user.
+     * SECURITY: userId is extracted from JWT token, not request parameter.
      */
     @GetMapping("/status")
-    public SyncManager.SyncStatus getStatus(@RequestParam("userId") String userId) {
+    public SyncManager.SyncStatus getStatus(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
         return syncManager.getStatus(userId);
     }
 
     /**
-     * Start email synchronization for a user.
+     * Start email synchronization for the authenticated user.
+     * SECURITY: userId is extracted from JWT token, not request parameter.
      * This is called when user clicks "Synchronize Email" button.
      */
     @PostMapping("/start")
-    public ResponseEntity<?> startSync(@RequestParam("userId") String userId) {
+    public ResponseEntity<?> startSync(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
         // Start sync asynchronously
         gmailService.syncEmails(userId);
         return ResponseEntity.ok(Map.of(

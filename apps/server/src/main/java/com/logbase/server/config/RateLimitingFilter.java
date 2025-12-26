@@ -24,7 +24,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     // IP -> Rate limit bucket
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    // Simple LRU Cache implementation to prevent memory leaks
+    private final Map<String, Bucket> buckets = java.util.Collections.synchronizedMap(
+        new java.util.LinkedHashMap<String, Bucket>(1000, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(java.util.Map.Entry<String, Bucket> eldest) {
+                return size() > 10000; // Limit to 10k active IPs
+            }
+        }
+    );
 
     // Configuration
     private static final int AUTH_REQUESTS_PER_MINUTE = 20;
