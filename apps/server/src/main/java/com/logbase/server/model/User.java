@@ -64,6 +64,16 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    // --- Admin Analytics Fields ---
+    private LocalDateTime lastLoginAt;
+    private Integer totalSessions;
+    private Long totalTimeSpent; // seconds
+    private Integer emailsSynced;
+    private String country;
+    private String city;
+    private String registeredIp;
+    private String referralSource;
+
     /**
      * Helper Method: Black Box Tasarım
      * Dışarıdan listeye doğrudan erişip add() yapmak yerine,

@@ -49,6 +49,8 @@ public class SecurityConfig {
                                 "/api/health/**",
                                 "/error"
                         ).permitAll()
+                        // Admin endpoints require ADMIN or SUPER_ADMIN role
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
