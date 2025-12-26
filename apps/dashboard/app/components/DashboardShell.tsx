@@ -301,14 +301,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* DESKTOP TOP HEADER */}
-        <header className="hidden md:flex items-center justify-between bg-white h-16 px-6 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center gap-2 text-gray-500 font-medium text-sm">
-            <Layers size={16} className="text-gray-400" />
-            <span>{t('dashboard.breadcrumb')}</span>
+        <header className="hidden md:flex items-center justify-between bg-white h-14 px-6 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <span className="hover:text-gray-700 cursor-pointer" onClick={() => router.push('/')}>Dashboard</span>
+            {pathname.includes('/profile') && (
+              <>
+                <span className="text-gray-300">/</span>
+                <span className="text-gray-800 font-medium">Profile</span>
+              </>
+            )}
+            {pathname.includes('/connections') && (
+              <>
+                <span className="text-gray-300">/</span>
+                <span className="text-gray-800 font-medium">Connections</span>
+              </>
+            )}
             {currentCategory && (
               <>
                 <span className="text-gray-300">/</span>
-                <span className="text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs border border-blue-100">
+                <span className="text-blue-600 font-medium">
                   {t(`categories.${currentCategory.toLowerCase()}`)}
                 </span>
               </>
