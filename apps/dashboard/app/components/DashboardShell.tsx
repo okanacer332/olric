@@ -1,19 +1,30 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { useSession, signOut, signIn } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard, User, Menu, X, LogOut, Plane, PanelLeftClose, PanelLeftOpen,
-  Bell, Wallet, ShoppingBag, Calendar, CreditCard, Layers, ChevronRight, Globe, Loader2, RefreshCw, Lock, Crown, Link2
+  Bell, Wallet, ShoppingBag, Calendar, CreditCard, ChevronRight, Globe, Lock, Crown, Link2
 } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { PremiumModal } from "./PremiumModal";
 import { SyncButton } from "./SyncButton";
 import { isPremiumCategory, Category } from "../lib/types";
+
+/**
+ * SECURITY: Get the base URL dynamically based on current domain.
+ * Prevents hardcoded localhost URLs from breaking production.
+ */
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return process.env.NEXTAUTH_URL || '/';
+}
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,50 +33,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
 
-  const userParam = searchParams.get("user");
   const currentCategory = searchParams.get("category");
   const ICON_SIZE = 18;
 
-  // Get user plan from session (defaults to FREE for free users)
+  // SECURITY: Proper type access for user plan (defaults to FREE)
   // The plan comes from the JWT token which includes the plan field
-  const userPlan = (session as any)?.user?.plan || 'FREE';
+  const userPlan = (session?.user as { plan?: string })?.plan || 'FREE';
   const isFreePlan = userPlan === 'FREE';
 
   // i18n translations
   const t = useTranslations();
-
-  // --- KESİN ÇÖZÜM: AKILLI AUTO-LOGIN ---
-  useEffect(() => {
-    // 1. Senaryo: URL'de kullanıcı var ama oturum yok -> GİRİŞ YAP (URL'e dokunma)
-    if (userParam && status === "unauthenticated") {
-      console.log("🔓 Backend parametresi ile giriş yapılıyor...");
-      signIn("credentials", {
-        email: userParam,
-        redirect: false
-      });
-    }
-
-    // 2. Senaryo: Oturum BAŞARIYLA açıldıysa -> ŞİMDİ URL'i temizle
-    // Bu blok sadece session yüklendikten sonra çalışır, bu yüzden Middleware kızmaz.
-    if (status === "authenticated" && userParam) {
-      console.log("✅ Oturum doğrulandı, URL temizleniyor.");
-      router.replace("/");
-    }
-  }, [userParam, status, router]);
-  // ----------------------------------------
-
-  // Oturum açılmaya çalışılırken kullanıcıya boş ekran göstermeyelim
-  if (userParam && status === "loading") {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-50 flex-col gap-4">
-        <Loader2 className="w-10 h-10 text-[#0c1844] animate-spin" />
-        <p className="text-gray-500 font-medium">{t('common.loading')}</p>
-      </div>
-    );
-  }
 
   const mainMenuItems = [
     { name: t('menu.overview'), href: "/", icon: <LayoutDashboard size={ICON_SIZE} />, exact: true },
@@ -239,7 +219,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-900 truncate">{session?.user?.name || "User"}</p>
-                    <button onClick={() => signOut({ callbackUrl: "http://localhost:3000" })} className="text-[10px] text-red-600 font-bold hover:underline">{t('common.signOut')}</button>
+                    <button onClick={() => signOut({ callbackUrl: getBaseUrl() })} className="text-[10px] text-red-600 font-bold hover:underline">{t('common.signOut')}</button>
                   </div>
                 </div>
               </div>
@@ -354,7 +334,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               )}
             </button>
 
-            <button onClick={() => signOut({ callbackUrl: "http://localhost:3000" })} className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors" title={t('common.signOut')}>
+            <button onClick={() => signOut({ callbackUrl: getBaseUrl() })} className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors" title={t('common.signOut')}>
               <LogOut size={16} />
             </button>
           </div>

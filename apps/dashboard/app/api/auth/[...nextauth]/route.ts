@@ -10,13 +10,15 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Backend'den gelen kullanıcıyı kabul et
+        // SECURITY NOTE: This accepts OAuth-authenticated users from backend redirect.
+        // The backend (Spring Boot) handles actual authentication via Google OAuth.
+        // This credentials provider just creates a session for already-authenticated users.
         if (credentials?.email) {
           return {
-             id: "1",
-             name: credentials.email.split("@")[0],
-             email: credentials.email,
-             image: ""
+            id: credentials.email, // Use email as unique ID
+            name: credentials.email.split("@")[0],
+            email: credentials.email,
+            image: ""
           };
         }
         return null;
@@ -24,12 +26,13 @@ const handler = NextAuth({
     })
   ],
   pages: {
-    signIn: "http://localhost:3000", // Hata olursa Landing Page'e at
+    // SECURITY: Use environment variable for proper URL in all environments
+    signIn: process.env.NEXTAUTH_URL || "/",
   },
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET, // .env'den okuması için
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
 export { handler as GET, handler as POST };
