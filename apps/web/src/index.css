@@ -89,3 +89,109 @@ body {
   @apply bg-background text-foreground;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* Hero Floating Animations */
+@keyframes float-down-1 {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(20px);
+    opacity: 0.8;
+  }
+}
+
+@keyframes float-down-2 {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(15px);
+    opacity: 0.85;
+  }
+}
+
+.animate-float-down-1 {
+  animation: float-down-1 3s ease-in-out infinite;
+}
+
+.animate-float-down-2 {
+  animation: float-down-2 4s ease-in-out infinite 0.5s;
+}
+
+.animate-float-down-3 {
+  animation: float-down-1 3.5s ease-in-out infinite 1s;
+}
+
+.animate-float-down-4 {
+  animation: float-down-2 4.5s ease-in-out infinite 1.5s;
+}
+
+/* Icon Floating Animations */
+@keyframes float-icon {
+
+  0%,
+  100% {
+    transform: translateY(-10px);
+  }
+
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+.animate-float-icon {
+  animation: float-icon 3s ease-in-out infinite;
+}
+
+.animate-float-icon-delayed {
+  animation: float-icon 3s ease-in-out infinite 1s;
+}
+
+/* Pulsing Line Animations */
+@keyframes pulse-line {
+
+  0%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.8;
+  }
+
+  50% {
+    stroke-dashoffset: 10;
+    opacity: 1;
+  }
+}
+
+.animate-pulse-line {
+  animation: pulse-line 2s linear infinite;
+}
+
+.animate-pulse-line-delayed {
+  animation: pulse-line 2s linear infinite 0.5s;
+}
+
+/* How It Works Fade-In Animation */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}

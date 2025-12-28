@@ -1,86 +1,125 @@
-import { Plane, CreditCard, ShoppingBag, Calendar, RotateCcw } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import travelOrganizerScreenshot from "@/assets/2121b57700922c934b7fca684f22bd173fb5412e.png";
-import expenseTrackingScreenshot from "@/assets/3c5bf939bd58bf0edb8c9690226df392e3923399.png";
-import assistantsScreenshot from "@/assets/2f8cebd62069fe0b22e2d1a12f90a8c37a050520.png";
+import { Plane, CreditCard, ShoppingBag, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
 
 const features = [
   {
     icon: Plane,
     title: "Travel Organizer",
-    description: "Automatically detects flights, hotels, and train bookings from your Gmail. See all upcoming trips, total value, and booking types in beautiful visualizations.",
-    image: travelOrganizerScreenshot
+    description: "Auto-detects flights, hotels, bookings",
+    color: "from-blue-500 to-blue-600"
   },
   {
     icon: CreditCard,
     title: "Finance Tracker",
-    description: "Track all expenses extracted from Gmail receipts. AI categorizes transactions, analyzes spending patterns, and provides smart tips to save money.",
-    image: expenseTrackingScreenshot
+    description: "Smart expense tracking & insights",
+    color: "from-emerald-500 to-emerald-600"
   },
   {
     icon: ShoppingBag,
     title: "Shopping Assistant",
-    description: "Monitor all your online orders from Amazon, Zara, and other retailers. See what's in transit, delivered, and total spending at a glance.",
-    image: assistantsScreenshot
+    description: "Track all your online orders",
+    color: "from-purple-500 to-purple-600"
   },
   {
     icon: Calendar,
     title: "Events Manager",
-    description: "Never miss a concert, appointment, or important event. VOYAGER automatically extracts event details and sends timely reminders.",
-    image: assistantsScreenshot
-  },
-  {
-    icon: RotateCcw,
-    title: "Subscriptions Tracker",
-    description: "Keep track of all your recurring subscriptions like Netflix, Spotify, and software tools. Monitor monthly and yearly costs with trial expiration alerts.",
-    image: assistantsScreenshot
+    description: "Never miss important events",
+    color: "from-orange-500 to-orange-600"
   }
 ];
 
 export function HowItWorks() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 10
+      );
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const scrollAmount = 320;
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(checkScroll, 100);
+    }
+  };
+
   return (
-    <section className="py-24 bg-gradient-to-br from-slate-50 via-gray-50 to-slate-50">
+    <section className="py-16 bg-gradient-to-br from-slate-50 via-gray-50 to-slate-50">
       <div className="mx-auto px-8 md:px-16 lg:px-24 xl:px-48">
-        {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">5 AI Assistants Working for You</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            VOYAGER uses advanced AI to automatically scan your Gmail and organize everything that matters
+        {/* Compact Header */}
+        <div className="text-center mb-10">
+          <h2 className="text-4xl font-bold text-gray-900 mb-3">AI Assistants</h2>
+          <p className="text-lg text-gray-600">
+            Automatically organize your digital life
           </p>
         </div>
 
-        {/* Features */}
-        <div className="space-y-16">
-          {features.map((feature, index) => (
-            <div key={index} className="flex flex-col lg:flex-row gap-8 items-center">
-              {/* Feature Info */}
-              <div className={`lg:w-1/3 ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
-                <div className="bg-white rounded-2xl p-8 shadow-md border border-blue-100">
-                  <div className="bg-gradient-to-br from-[#1e3a8a] to-[#0c1844] rounded-xl size-14 flex items-center justify-center mb-6">
-                    <feature.icon className="size-7 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 mb-6 leading-relaxed">{feature.description}</p>
-                  <button className="bg-[#0c1844] hover:bg-[#1e3a8a] text-white px-6 py-3 rounded-full transition-colors">
-                    Learn More
-                  </button>
-                </div>
-              </div>
+        {/* Swipeable Carousel */}
+        <div className="relative max-w-6xl mx-auto">
+          {/* Scroll Buttons */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all hover:scale-110"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="size-6 text-gray-700" />
+            </button>
+          )}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all hover:scale-110"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="size-6 text-gray-700" />
+            </button>
+          )}
 
-              {/* Feature Image */}
-              <div className={`lg:w-2/3 ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
-                <div className="bg-white rounded-2xl shadow-2xl border-4 border-white overflow-hidden transform hover:scale-[1.02] transition-transform">
-                  <div className="aspect-[16/9]">
-                    <ImageWithFallback 
-                      src={feature.image}
-                      alt={feature.title}
-                      className="w-full h-full object-cover"
-                    />
+          {/* Scrollable Container */}
+          <div
+            ref={scrollContainerRef}
+            onScroll={checkScroll}
+            className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="flex-shrink-0 w-[300px] snap-center"
+              >
+                <div className="group relative bg-white hover:bg-[#0c1844] rounded-2xl p-6 shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full overflow-hidden">
+                  <div className={`bg-gradient-to-br ${feature.color} rounded-xl size-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className="size-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-white mb-2 transition-colors">{feature.title}</h3>
+                  <p className="text-gray-600 group-hover:text-gray-200 text-sm transition-colors">{feature.description}</p>
+
+                  {/* Flying Icon on Hover */}
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <feature.icon className="size-8 text-white/30 animate-float-icon" />
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Scroll Hint */}
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-400">← Swipe to explore →</p>
+          </div>
         </div>
       </div>
     </section>

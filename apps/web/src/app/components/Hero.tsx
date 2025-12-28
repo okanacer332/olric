@@ -1,6 +1,5 @@
-import { Sparkles, Download } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import assistantsScreenshot from "@/assets/2f8cebd62069fe0b22e2d1a12f90a8c37a050520.png";
+import { Sparkles, Plug, FileText, Plane, Tv, Laptop } from "lucide-react";
+import dashboardImg from "@/assets/dashboard-overview.png";
 
 export function Hero() {
   return (
@@ -13,9 +12,9 @@ export function Hero() {
             <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-100 to-indigo-100 border border-blue-200 rounded-full px-4 py-2 mb-8">
               <Sparkles className="size-4 text-[#0c1844]" />
               <span className="text-sm">
-                <span className="font-bold text-[#0c1844]">Open Beta</span>
+                <span className="font-bold text-[#0c1844]">AI Insights</span>
                 <span className="text-gray-600"> · </span>
-                <span className="text-gray-600">AI Gmail Assistants are live</span>
+                <span className="text-gray-600">Your inbox, automatically organized</span>
               </span>
             </div>
 
@@ -23,7 +22,7 @@ export function Hero() {
             <h1 className="text-6xl font-bold tracking-tight mb-6">
               <span className="text-gray-900">AI-Powered</span>
               <br />
-              <span className="text-[#0c1844]">Gmail</span>
+              <span className="text-[#0c1844]">Mail</span>
               <br />
               <span className="text-[#0c1844]">Assistants</span>
             </h1>
@@ -36,32 +35,71 @@ export function Hero() {
 
             {/* CTA Button */}
             <button className="group bg-[#0c1844] hover:bg-[#1e3a8a] text-white px-8 py-4 rounded-full transition-all shadow-lg hover:shadow-xl flex items-center gap-3">
-              <span className="text-lg font-bold">Gmailini Bağla</span>
-              <Download className="size-5 group-hover:translate-y-1 transition-transform" />
+              <span className="text-lg font-bold">Mailini Bağla</span>
+              <Plug className="size-5 group-hover:rotate-12 transition-transform" />
             </button>
           </div>
 
           {/* Right Column - Dashboard Preview */}
           <div className="relative">
-            <div className="relative bg-white rounded-2xl shadow-2xl border-4 border-white overflow-hidden">
-              <div className="aspect-[16/10] relative">
-                <img 
-                  src={assistantsScreenshot}
-                  alt="VOYAGER AI-Powered Gmail Assistants"
-                  className="w-full h-full object-cover"
-                />
+            <div className="relative overflow-hidden">
+              <img
+                src={dashboardImg}
+                alt="Olric Dashboard - Financial Overview"
+                className="w-full h-auto"
+              />
+            </div>
+
+            {/* Animated Message Cards - Invoice */}
+            <div className="absolute top-1/4 -right-12 animate-float-down-1">
+              <div className="bg-white rounded-xl shadow-lg p-4 border-2 border-green-100 flex items-center gap-3 hover:shadow-xl transition-shadow">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <FileText className="size-5 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Invoice Detected</div>
+                  <div className="text-sm font-bold text-gray-900">$1,245.00</div>
+                </div>
               </div>
             </div>
 
-            {/* Floating Stats */}
-            <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-xl p-6 border-2 border-blue-100">
-              <div className="text-sm text-gray-600 mb-1">AI Assistants</div>
-              <div className="text-3xl font-bold text-[#0c1844]">5</div>
+            {/* Animated Message Cards - Flight Ticket */}
+            <div className="absolute top-2/3 -right-16 animate-float-down-2">
+              <div className="bg-white rounded-xl shadow-lg p-4 border-2 border-purple-100 flex items-center gap-3 hover:shadow-xl transition-shadow">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Plane className="size-5 text-purple-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Flight Booked</div>
+                  <div className="text-sm font-bold text-gray-900">NYC → LAX</div>
+                </div>
+              </div>
             </div>
 
-            <div className="absolute -top-6 -right-6 bg-gradient-to-br from-[#0c1844] to-[#1e3a8a] rounded-2xl shadow-xl p-6">
-              <div className="text-sm text-blue-200 mb-1">Auto-Organized</div>
-              <div className="text-3xl font-bold text-white">100%</div>
+            {/* Animated Message Cards - Netflix Subscription (Left Side) */}
+            <div className="absolute top-1/3 -left-12 animate-float-down-3">
+              <div className="bg-white rounded-xl shadow-lg p-4 border-2 border-red-100 flex items-center gap-3 hover:shadow-xl transition-shadow">
+                <div className="bg-red-100 p-2 rounded-lg">
+                  <Tv className="size-5 text-red-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Netflix</div>
+                  <div className="text-sm font-bold text-gray-900">$15.99/mo</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Animated Message Cards - Tech Shopping (Left Side) */}
+            <div className="absolute top-3/5 -left-16 animate-float-down-4">
+              <div className="bg-white rounded-xl shadow-lg p-4 border-2 border-blue-100 flex items-center gap-3 hover:shadow-xl transition-shadow">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Laptop className="size-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Tech Purchase</div>
+                  <div className="text-sm font-bold text-gray-900">MacBook Pro</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

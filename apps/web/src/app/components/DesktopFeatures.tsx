@@ -26,7 +26,7 @@ export function DesktopFeatures() {
                 <div className="flex-1 text-center text-sm text-gray-400">VOYAGER - AI-Powered Gmail Assistants</div>
               </div>
               <div className="bg-white rounded-b-2xl shadow-2xl overflow-hidden">
-                <img 
+                <img
                   src={assistantsScreenshot}
                   alt="VOYAGER Desktop Application"
                   className="w-full h-auto"
@@ -116,7 +116,7 @@ export function DesktopFeatures() {
         {/* Download CTA */}
         <div className="text-center mt-12">
           <button className="bg-white text-[#0c1844] hover:bg-gray-100 px-8 py-4 rounded-full font-bold transition-colors shadow-lg">
-            Gmailini Bağla
+            Mailini Bağla
           </button>
         </div>
       </div>
