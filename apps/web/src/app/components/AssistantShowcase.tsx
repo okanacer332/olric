@@ -5,10 +5,10 @@ import expenseTrackingScreenshot from '@/assets/3c5bf939bd58bf0edb8c9690226df392
 
 export function AssistantShowcase() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-16 bg-white">
       <div className="mx-auto px-8 md:px-16 lg:px-24 xl:px-48">
         {/* Travel Organizer Section */}
-        <div className="mb-32">
+        <div className="mb-20">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-block bg-blue-100 text-[#0c1844] px-4 py-2 rounded-full mb-6">
@@ -18,7 +18,7 @@ export function AssistantShowcase() {
                 Tüm Rezervasyonlarınız Tek Yerde
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                VOYAGER uçuş, otel ve tren rezervasyonlarınızı Gmail'den otomatik olarak algılar.
+                OLRIC uçuş, otel ve tren rezervasyonlarınızı e-postadan otomatik olarak algılar.
                 Yaklaşan seyahatlerinizi, toplam rezervasyon değerini ve rezervasyon türlerini güzel görselleştirmelerle görün.
               </p>
               <ul className="space-y-4">
@@ -58,8 +58,8 @@ export function AssistantShowcase() {
               </ul>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl p-8 shadow-2xl">
-                <img 
+              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02]">
+                <img
                   src={travelOrganizerScreenshot}
                   alt="Seyahat Organizatörü Paneli"
                   className="w-full h-auto rounded-xl shadow-lg"
@@ -73,8 +73,8 @@ export function AssistantShowcase() {
         <div>
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1">
-              <div className="bg-gradient-to-br from-cyan-100 to-teal-100 rounded-3xl p-8 shadow-2xl">
-                <img 
+              <div className="bg-gradient-to-br from-cyan-100 to-teal-100 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02]">
+                <img
                   src={expenseTrackingScreenshot}
                   alt="Harcama Takip Paneli"
                   className="w-full h-auto rounded-xl shadow-lg"

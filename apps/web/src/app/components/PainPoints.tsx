@@ -3,7 +3,7 @@ import { CircleCheck } from "lucide-react";
 const painPoints = [
   {
     problem: "Tired of digging through hundreds of emails to find travel bookings, receipts, or subscription details?",
-    solution: "VOYAGER's AI automatically scans your Gmail inbox and extracts all relevant information—flights, expenses, orders, events, and subscriptions—organizing everything in one beautiful dashboard."
+    solution: "OLRIC'in AI'si otomatik olarak e-posta gelen kutunuzu tarar ve tüm ilgili bilgileri—uçuşlar, harcamalar, siparişler, etkinlikler ve abonelikler—çıkarır, her şeyi güzel bir panelde organize eder."
   },
   {
     problem: "Losing track of monthly subscriptions and wondering where your money goes each month?",
@@ -23,7 +23,7 @@ export function PainPoints() {
         <div className="text-center mb-16">
           <h2 className="text-5xl font-bold mb-4">Sound familiar?</h2>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-            We understand the chaos of managing your digital life. Here's how VOYAGER solves it.
+            Dijital hayatınızı yönetmenin karmaşasını anlayabiliriz. OLRIC'ın nasıl çözdüğünü görün.
           </p>
         </div>
 

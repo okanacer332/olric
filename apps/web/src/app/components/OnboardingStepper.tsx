@@ -11,9 +11,9 @@ const steps = [
   {
     number: 2,
     icon: Mail,
-    title: "Gmail Bağla",
-    description: "Güvenli OAuth ile bağlanın",
-    detail: "Gmail hesabınızı sadece okuma yetkisi ile güvenli şekilde bağlayın."
+    title: "E-postanı Bağla",
+    description: "Güvenli OAuth ile bağlan",
+    detail: "E-posta hesabını sadece okuma yetkisi ile güvenli şekilde bağla."
   },
   {
     number: 3,
@@ -26,13 +26,17 @@ const steps = [
 
 export function OnboardingStepper() {
   return (
-    <section className="py-24 bg-gradient-to-br from-gray-50 via-slate-50 to-gray-50">
-      <div className="mx-auto px-8 md:px-16 lg:px-24 xl:px-48">
+    <section className="py-16 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl"></div>
+      </div>
+      <div className="mx-auto px-8 md:px-16 lg:px-24 xl:px-48 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">3 Adımda Başla</h2>
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">3 Adımda Başla</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Dakikalar içinde VOYAGER'ı kullanmaya başlayın ve dijital hayatınızı organize edin
+            Dakikalar içinde OLRIC'i kullanmaya başlayın ve dijital hayatınızı organize edin
           </p>
         </div>
 
@@ -49,7 +53,7 @@ export function OnboardingStepper() {
               {steps.map((step, index) => (
                 <div key={step.number} className="relative">
                   {/* Step Card */}
-                  <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-[#0c1844] transition-all hover:shadow-xl">
+                  <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-[#0c1844] transition-all hover:shadow-2xl hover:-translate-y-1 duration-300">
                     {/* Icon Circle */}
                     <div className="relative mb-6">
                       <div className="size-20 mx-auto bg-gradient-to-br from-[#0c1844] to-[#1e3a8a] rounded-full flex items-center justify-center relative">
@@ -89,7 +93,7 @@ export function OnboardingStepper() {
           {/* CTA */}
           <div className="text-center mt-16">
             <button className="group bg-gradient-to-r from-[#0c1844] to-[#1e3a8a] hover:from-[#1e3a8a] hover:to-[#0c1844] text-white px-12 py-5 rounded-full transition-all shadow-xl hover:shadow-2xl flex items-center gap-3 mx-auto text-lg">
-              <span className="font-bold">Gmailini Bağla</span>
+              <span className="font-bold">Mailini Bağla</span>
               <Mail className="size-6 group-hover:rotate-12 transition-transform" />
             </button>
             <p className="text-sm text-gray-500 mt-4">Kredi kartı gerekmez • 2 dakikada kurulum</p>
