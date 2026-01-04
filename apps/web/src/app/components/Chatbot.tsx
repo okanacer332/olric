@@ -4,9 +4,9 @@ import { useState } from "react";
 export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { 
-      type: 'bot', 
-      text: 'Merhaba! 👋 VOYAGER AI Asistanı olarak size nasıl yardımcı olabilirim?' 
+    {
+      type: 'bot',
+      text: 'Merhaba! 👋 OLRIC AI Asistanı olarak size nasıl yardımcı olabilirim?'
     }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -20,12 +20,12 @@ export function Chatbot() {
 
   const handleQuickReply = (reply: string) => {
     setMessages(prev => [...prev, { type: 'user', text: reply }]);
-    
+
     // Simulate bot response
     setTimeout(() => {
       let response = '';
       if (reply.includes('çalışır')) {
-        response = 'VOYAGER, Gmail hesabınızı güvenli şekilde tarayarak seyahat rezervasyonları, harcamalar, siparişler, etkinlikler ve abonelikleri otomatik olarak organize eder. 🎯';
+        response = 'OLRIC, e-posta hesabınızı güvenli şekilde tarayarak seyahat rezervasyonları, harcamalar, siparişler, etkinlikler ve abonelikleri otomatik olarak organize eder. 🎯';
       } else if (reply.includes('Fiyat')) {
         response = 'Ücretsiz plan, Pro plan (₺299/ay) ve Lifetime lisans (₺1499) sunuyoruz. Pro plan ile 5 asistana sınırsız erişim sağlayabilirsiniz! 💎';
       } else if (reply.includes('Gmail')) {
@@ -39,14 +39,14 @@ export function Chatbot() {
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
-    
+
     setMessages(prev => [...prev, { type: 'user', text: inputValue }]);
     setInputValue('');
-    
+
     setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        type: 'bot', 
-        text: 'Teşekkürler! Detaylı bilgi için destek ekibimiz en kısa sürede size dönüş yapacak. 🙏' 
+      setMessages(prev => [...prev, {
+        type: 'bot',
+        text: 'Teşekkürler! Detaylı bilgi için destek ekibimiz en kısa sürede size dönüş yapacak. 🙏'
       }]);
     }, 500);
   };
@@ -76,7 +76,7 @@ export function Chatbot() {
                 <MessageCircle className="size-5" />
               </div>
               <div>
-                <div className="font-bold">VOYAGER AI Asistan</div>
+                <div className="font-bold">OLRIC AI Asistan</div>
                 <div className="text-xs text-blue-200">Genellikle hemen yanıt verir</div>
               </div>
             </div>
@@ -96,11 +96,10 @@ export function Chatbot() {
                 className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-2xl ${
-                    msg.type === 'user'
+                  className={`max-w-[80%] p-3 rounded-2xl ${msg.type === 'user'
                       ? 'bg-[#0c1844] text-white rounded-br-sm'
                       : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
-                  }`}
+                    }`}
                 >
                   {msg.text}
                 </div>

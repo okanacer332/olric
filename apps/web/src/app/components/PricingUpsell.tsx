@@ -68,11 +68,11 @@ const plans = [
 
 export function PricingUpsell() {
   return (
-    <section className="py-24 bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50">
+    <section className="py-16 bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50">
       <div className="mx-auto px-8 md:px-16 lg:px-24 xl:px-48">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Tüm Asistanların Kilidini Aç
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -85,11 +85,10 @@ export function PricingUpsell() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative bg-white rounded-3xl p-8 ${
-                plan.popular
-                  ? 'shadow-2xl border-4 border-[#0c1844] scale-105'
-                  : 'shadow-lg border-2 border-gray-100'
-              }`}
+              className={`relative bg-white rounded-3xl p-8 ${plan.popular
+                ? 'shadow-2xl border-4 border-[#0c1844] scale-105'
+                : 'shadow-lg border-2 border-gray-100'
+                }`}
             >
               {/* Popular Badge */}
               {plan.popular && (
@@ -154,11 +153,10 @@ export function PricingUpsell() {
 
               {/* CTA Button */}
               <button
-                className={`w-full py-4 rounded-full font-bold transition-all ${
-                  plan.popular
-                    ? 'bg-gradient-to-r from-[#0c1844] to-[#1e3a8a] hover:from-[#1e3a8a] hover:to-[#0c1844] text-white shadow-lg hover:shadow-xl'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
-                }`}
+                className={`w-full py-4 rounded-full font-bold transition-all ${plan.popular
+                  ? 'bg-gradient-to-r from-[#0c1844] to-[#1e3a8a] hover:from-[#1e3a8a] hover:to-[#0c1844] text-white shadow-lg hover:shadow-xl'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                  }`}
               >
                 {plan.cta}
               </button>

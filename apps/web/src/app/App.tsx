@@ -16,8 +16,8 @@ export default function App() {
       <Header />
       <main>
         <Hero />
-        <HowItWorks />
         <OnboardingStepper />
+        <HowItWorks />
         <AssistantShowcase />
         <PainPoints />
         <PricingUpsell />

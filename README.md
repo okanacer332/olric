@@ -1,4 +1,6 @@
-# Turborepo starter
+# Olric Monorepo
+
+> **🚀 Hızlı Başlangıç:** Projeyi tek komutla başlatmak için [QUICKSTART.md](./QUICKSTART.md) dosyasına bakın!
 
 This Turborepo starter is maintained by the Turborepo core team.
 
